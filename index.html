@@ -11,13 +11,23 @@
 <style>html,body,#app{background:#010208!important}#ovload,#overr,#cwrap,#ccol,#col-center,#cv{background:#010208!important}</style>
 <!-- CRASH GUARD: surface any JS error visibly -->
 <script>
-window.onerror=function(msg,src,line,col){
-  var b=document.body||document.documentElement;
-  var d=document.createElement('div');
-  d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#200;color:#f55;font:11px monospace;padding:6px 10px;border-bottom:1px solid #f0334e;white-space:pre-wrap';
-  d.textContent='[ERROR] '+msg+' ('+src+':'+line+':'+col+')';
-  b.insertBefore(d,b.firstChild);
-  return false;
+window.onerror=function(msg,src,line,col,err){
+  // v24.2: only show banner for FIRST error; subsequent errors are logged silently
+  // so that one bad signal record doesn't keep flashing the user.
+  if (!window.__sxErrorShown) {
+    window.__sxErrorShown = true;
+    var b=document.body||document.documentElement;
+    var d=document.createElement('div');
+    d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#200;color:#f55;font:11px monospace;padding:6px 10px;border-bottom:1px solid #f0334e;white-space:pre-wrap;cursor:pointer';
+    d.textContent='[ERROR] '+msg+' ('+src+':'+line+':'+col+')  [click to dismiss]';
+    d.onclick = function(){ d.remove(); };
+    b.insertBefore(d,b.firstChild);
+    setTimeout(function(){ try{ d.remove(); }catch(e){} }, 8000);
+    // Auto-reset the "shown" flag after 30s so genuinely new errors can surface
+    setTimeout(function(){ window.__sxErrorShown = false; }, 30000);
+  }
+  console.warn('[sx-guard]', msg, src, line, col, err);
+  return true; // suppress default browser handling — keep app running
 };
 </script>
 
@@ -37,6 +47,44 @@ window.onerror=function(msg,src,line,col){
     console.log('[SignalX v23] Version tag set — data preserved');
   } catch(e) { /* localStorage unavailable — ignore */ }
 })();
+
+// ─────────────────────────────────────────────────────────────────────────
+// v24.3 DEBUG MODE
+// ─────────────────────────────────────────────────────────────────────────
+// Toggle from browser console:
+//   SX_DEBUG.on()    → verbose logging of every signal decision
+//   SX_DEBUG.off()   → silent (default)
+//   SX_DEBUG.is()    → check current state
+//   SX_DEBUG.log(...args)  → conditional log (used internally)
+//
+// When ON, you'll see:
+//   • Every scan tick: how many candidates, why each was rejected
+//   • Every signal generated: full quality gate breakdown (EMA/RSI/SR/Candle)
+//   • Every WebSocket tick: live price + candle close events
+//   • Every state transition: WAITING → TOUCHED → ACTIVE → WIN/LOSS
+// ─────────────────────────────────────────────────────────────────────────
+window.SX_DEBUG = (function(){
+  // Persist preference across reloads
+  let on = (function(){
+    try { return localStorage.getItem('signalx.debug') === '1'; } catch(e) { return false; }
+  })();
+  return {
+    on:  () => { on = true;  try{ localStorage.setItem('signalx.debug','1'); }catch(e){} console.log('%c[SX_DEBUG] ON','color:#2dd4bf;font-weight:700'); },
+    off: () => { on = false; try{ localStorage.setItem('signalx.debug','0'); }catch(e){} console.log('%c[SX_DEBUG] OFF','color:#888'); },
+    is:  () => on,
+    log: (...args) => { if (on) console.log('%c[SX]','color:#2dd4bf', ...args); },
+    warn:(...args) => { if (on) console.warn('%c[SX]','color:#f59e0b', ...args); },
+    sig: (sig) => {
+      if (!on) return;
+      console.groupCollapsed(`%c[SX] SIGNAL → ${sig.dir} ${sig.symbol||''} score=${sig.score} RR=${sig.rr?.toFixed?.(2)}`,'color:#2dd4bf;font-weight:700');
+      console.log('Quality gate:', sig.qReasons || sig.reasons);
+      console.log('Entry:', sig.entry, 'SL:', sig.sl, 'TP:', sig.tp);
+      console.log('Tier:', sig.tier, 'Confidence:', sig.confidence);
+      console.groupEnd();
+    },
+  };
+})();
+console.log('%c[SignalX] Debug toggle: SX_DEBUG.on() / SX_DEBUG.off() / SX_DEBUG.is()','color:#888;font-style:italic');
 </script>
 
 <!-- ═══════════════════════════════════════════════════
@@ -207,8 +255,7 @@ window.onerror=function(msg,src,line,col){
 html,body{width:100%;height:100%;background:var(--c0);overflow:hidden;font-family:var(--font);font-size:11px;color:var(--t1)}
 /* Touch: prevent accidental text selection on buttons/controls */
 button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
-/* Canvas: allow panning/pinch-zoom gestures to work on the chart */
-#cv{ touch-action:pan-x pan-y; }
+/* Canvas touch/cursor handled in main #cv rule below */
 /* Safe area for notched phones (iOS) */
 #app{ padding-bottom:env(safe-area-inset-bottom,0px); }
 
@@ -281,7 +328,8 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
 #col-left>*:only-child,#col-right>*:only-child{flex:1}
 #ccol{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--c0)}
 #cwrap{flex:1;position:relative;overflow:hidden;min-height:0}
-#cv{width:100%;height:100%;display:block;cursor:crosshair}
+#cv{width:100%;height:100%;display:block;cursor:grab;touch-action:none;-ms-touch-action:none;-webkit-user-select:none;user-select:none}
+#cv:active{cursor:grabbing}
 
 /* ── Overlays ── */
 #ovload,#overr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:15}
@@ -4716,6 +4764,15 @@ function applyStrictLevels(sig, cs, quality) {
   const R = Math.abs(entry - swing);       // 1R = entry-SL distance
   if (R <= 0) return null;
 
+  // v24.4 FIX: sanity-cap SL distance. The original computeSLTP enforces
+  // SL_MIN_DIST_PCT (0.4%) and SL_MAX_DIST_PCT (6%), but applyStrictLevels
+  // overwrites entry/sl with breakout-level + swing — those bounds aren't
+  // re-checked, so a wild swing in the lookback could produce a 20%+ SL.
+  // We use a generous 15% cap to catch only catastrophic cases without
+  // over-filtering legitimate volatile-asset trades.
+  const slDistPct = R / Math.abs(entry);
+  if (slDistPct > 0.15) return null;
+
   const stopLoss = swing;
   const tp1 = isBuy ? entry + 1 * R : entry - 1 * R;
   const tp2 = isBuy ? entry + 2 * R : entry - 2 * R;
@@ -6311,8 +6368,11 @@ function showFloatingNotif(type, sigOrData, customMsg){
 window.showElitePopup  = showElitePopup;
 window.showFloatingNotif = showFloatingNotif;
 
+// v24.4 FIX: was only updating S.soundEnabled — playAlertSound reads
+// S.ctrl.soundEnabled, so we keep both in sync to prevent half-mute state.
 function toggleSound() {
   S.soundEnabled = !S.soundEnabled;
+  if (S.ctrl) S.ctrl.soundEnabled = S.soundEnabled;
   const btn = document.getElementById('soundBtn');
   if (btn) {
     btn.classList.toggle('on', S.soundEnabled);
@@ -7158,6 +7218,7 @@ function onNewData(candleClosed) {
     resolveOutcomes();
     if (S.sigs.length > prevCount) {
       newSig = S.sigs[S.sigs.length - 1];
+      window.SX_DEBUG?.sig?.(newSig); // v24.3: full signal breakdown when debug ON
       triggerSignalAlert(newSig);
       evaluateExecution(newSig);
       triggerNewSignalFeedNotif(newSig);
@@ -7402,7 +7463,12 @@ function updAlertLog() {
 // SECTION 10 — UI CONTROLLERS
 // ═══════════════════════════════════════════════════════════
 
-const fp = (p, d=2) => p >= 1000 ? p.toFixed(d) : p.toFixed(Math.max(d,4));
+// v24.2 FIX: null-safe price formatter — was crashing when called with null/undefined
+const fp = (p, d=2) => {
+  const n = Number(p);
+  if (!isFinite(n)) return '--';
+  return n >= 1000 ? n.toFixed(d) : n.toFixed(Math.max(d, 4));
+};
 
 // Unified status color lookup
 const statusColor = (s) => ({
@@ -9513,7 +9579,10 @@ function toggleCtrl(key, el) {
     document.getElementById('tgl-alrt-lbl') && (document.getElementById('tgl-alrt-lbl').textContent = nowOn ? 'ON' : 'OFF');
     showToast(nowOn ? '✓ Alerts ENABLED' : '🔕 Alerts MUTED', 2500);
   } else if (key === 'sound') {
+    // v24.4 FIX: sync BOTH state variables. Old code only set S.soundEnabled,
+    // but playAlertSound() reads S.ctrl.soundEnabled — they could fall out of sync.
     S.soundEnabled = nowOn;
+    if (S.ctrl) S.ctrl.soundEnabled = nowOn;
     const sb = document.getElementById('soundBtn');
     if (sb) { sb.textContent = nowOn ? '🔊 SOUND' : '🔇 SOUND'; sb.className = nowOn ? 'on' : ''; }
     document.getElementById('tgl-snd-lbl') && (document.getElementById('tgl-snd-lbl').textContent = nowOn ? 'ON' : 'OFF');
@@ -9716,27 +9785,37 @@ function applyPriorityClasses() {
  * scanMarket() — Re-runs the signal engine on current candle data.
  * Called automatically every 3 seconds to ensure signals are generated.
  *
- * Filtering logic (MODE-based):
- *   STRICT  → score >= cfg.scoreMin (85)
- *   NORMAL  → score >= 70
- *   test override → score >= 60 always passes
+ * Filtering logic (MODE-based, v29):
+ *   STRICT  → score >= 75
+ *   NORMAL  → score >= 60 (final scan floor; pipeline pre-filters at 65)
+ * Engine pipeline applies a stricter floor before this stage; this is a
+ * final safety net only.
  */
 let _scanRunning = false;
 function scanMarket() {
-  // ═══ FORCE SIGNALS ENABLED — no gate can block this ═══
-  S.ctrl = S.ctrl || {};
-  S.ctrl.signalsEnabled = true;
-  S.ctrl.alertsEnabled  = true;
-  S.ctrl.aiEnabled      = true;
+  // v24.4 FIX: defensive init only — DO NOT force-overwrite user toggles.
+  // Previously this loop overwrote signalsEnabled/alertsEnabled/aiEnabled to
+  // true every 3s, which made the master toggles in the CTRL panel useless.
+  // Now we only set defaults if the field is missing.
+  if (!S.ctrl) {
+    S.ctrl = { signalsEnabled: true, alertsEnabled: true, aiEnabled: true };
+  } else {
+    if (S.ctrl.signalsEnabled === undefined) S.ctrl.signalsEnabled = true;
+    if (S.ctrl.alertsEnabled  === undefined) S.ctrl.alertsEnabled  = true;
+    if (S.ctrl.aiEnabled      === undefined) S.ctrl.aiEnabled      = true;
+  }
 
-  console.log("[scanMarket] tick · signalsEnabled=", S.ctrl.signalsEnabled,
-              "· candles=", S.candles?.length || 0,
-              "· sigs=", S.sigs.length,
-              "· mode=", (typeof MODE !== 'undefined' ? MODE : '?'));
+  // v24.3: only spam console when SX_DEBUG.on() — keeps console clean by default
+  if (window.SX_DEBUG?.is?.()) {
+    console.log("[scanMarket] tick · signalsEnabled=", S.ctrl.signalsEnabled,
+                "· candles=", S.candles?.length || 0,
+                "· sigs=", S.sigs.length,
+                "· mode=", (typeof MODE !== 'undefined' ? MODE : '?'));
+  }
 
   if (_scanRunning) return;
   if (!S.candles || S.candles.length < 10) {
-    console.log("[scanMarket] waiting for candles (have", S.candles?.length || 0, ")");
+    if (window.SX_DEBUG?.is?.()) console.log("[scanMarket] waiting for candles (have", S.candles?.length || 0, ")");
     return;
   }
 
@@ -9745,7 +9824,18 @@ function scanMarket() {
     // Recompute indicators if missing — engine needs them
     if (!S.ind && typeof computeAll === 'function') {
       S.ind = computeAll(S.candles);
-      console.log("[scanMarket] indicators recomputed");
+      if (window.SX_DEBUG?.is?.()) console.log("[scanMarket] indicators recomputed");
+    }
+
+    // Always resolve outcomes even if signal generation is paused — TP/SL
+    // tracking on existing trades must continue regardless of toggle state.
+    try { resolveOutcomes(); } catch(e) {}
+
+    // v24.4: respect signalsEnabled toggle. If user paused signals, skip
+    // engine + UI ticks but keep the outcome tracker running (above).
+    if (!S.ctrl.signalsEnabled) {
+      _scanRunning = false;
+      return;
     }
 
     const currentMode = (typeof MODE !== 'undefined') ? MODE : 'NORMAL';
@@ -9758,7 +9848,7 @@ function scanMarket() {
       console.warn('[scanMarket] runEngine threw:', e.message);
       rawSigs = [];
     }
-    console.log("[scanMarket] engine returned", rawSigs.length, "candidate signals");
+    if (window.SX_DEBUG?.is?.()) console.log("[scanMarket] engine returned", rawSigs.length, "candidate signals");
 
     let added = 0, kept = 0, dropped = 0;
     for (const sig of rawSigs) {
@@ -9796,7 +9886,7 @@ function scanMarket() {
     );
     // Update UI blocked count for KPI bar
     try { S.blockedCount = rejected; } catch(e) {}
-    console.log("[scanMarket] kept=" + kept + " dropped=" + dropped + " newlyAdded=" + added);
+    if (window.SX_DEBUG?.is?.()) console.log("[scanMarket] kept=" + kept + " dropped=" + dropped + " newlyAdded=" + added);
 
     // ALWAYS refresh UI so counters tick and any newly-filled status shows
     try { resolveOutcomes(); } catch(e) {}
@@ -9850,8 +9940,9 @@ try { checkDailyReset(); } catch(e) {}
 try { updStatsStrip(); } catch(e) {}
 try { updSmartFilterUI(); } catch(e) {}
 try { updMiniStrip(0, 0, 0, 0, 0, S.equity, 0); } catch(e) {}
-// Force signals enabled on load
-S.ctrl = S.ctrl || {}; S.ctrl.signalsEnabled = true;
+// v24.4: defensive init for ctrl — do NOT force toggle states (was breaking the UI toggles)
+S.ctrl = S.ctrl || { signalsEnabled: true, alertsEnabled: true, aiEnabled: true };
+if (S.ctrl.signalsEnabled === undefined) S.ctrl.signalsEnabled = true;
 // FIX: guard init so a crash here surfaces instead of silently leaving white screen
 try { init(S.sym, S.tf); } catch(e) { console.error('[boot] init failed:', e); }
 
@@ -10349,18 +10440,10 @@ setInterval(function() {
 // v7 used S.ctrl.soundEnabled. Ensure it's initialised to true.
 if (S.ctrl) S.ctrl.soundEnabled = true;
 
-// Patch the sound toggle button to update both S.ctrl.soundEnabled
-// AND the visual ring system
-document.addEventListener('DOMContentLoaded', () => {
-  const sBtn = document.getElementById('soundBtn');
-  if (sBtn) {
-    sBtn.addEventListener('click', () => {
-      const isOn = sBtn.classList.toggle('on');
-      if (S.ctrl) S.ctrl.soundEnabled = isOn;
-      sBtn.textContent = isOn ? '🔊 SOUND' : '🔇 SOUND';
-    });
-  }
-});
+// v24.4 FIX: removed a duplicate click handler that used to attach here.
+// It fought with toggleSound() (registered earlier) and produced a state
+// where S.soundEnabled and S.ctrl.soundEnabled disagreed. Sync now happens
+// inside toggleSound() and toggleCtrl('sound', ...) directly.
 
 // ═══════════════════════════════════════════════════════════
 // SECTION 22 — v8 SIGNAL HOOK (handled in Section 16 — DOMContentLoaded)
