@@ -2716,6 +2716,15 @@ CFG.MIN_RR              = 1.5;      // v23.1: 1.5 R:R — confirmed ✅
 CFG.MIN_RR_PRECISION    = 1.5;      // v23.1: matched to MIN_RR
 CFG.ELITE_REQUIRE_CONFLUENCE = false; // drop the all-or-nothing elite gate
 
+// ── v29.1 SIGNAL UNLOCK FIX ──────────────────────────────────────────────────
+// Diagnostic showed 450 candidates → 0 accepted, all rejected for
+// "not near a validated S/R level". Two changes:
+//   1) Widen S/R entry zone (1.5% → 3%) — crypto routinely swings >1.5%
+//      between zones. 3% still keeps signals near structure.
+//   2) Lower SR_PROXIMITY_WEAK to match — used by quality gate scoring.
+CFG.SR_ENTRY_MAX_DIST  = 0.03;   // was 0.015 — widen entry zone to 3%
+CFG.SR_PROXIMITY_WEAK  = 0.04;   // was 0.03  — keep scoring band a touch wider
+
 // ═══════════════════════════════════════════════════════════
 // SECTION 2 — STATE
 // ═══════════════════════════════════════════════════════════
@@ -2867,7 +2876,10 @@ function swingZones(cs, lb=8) {
     if (n) { n.strength++; n.price = (n.price+z.price)/2; }
     else mg.push({...z, strength:1});
   }
-  return mg.filter(z => z.strength >= 2);
+  // v29.1 FIX: was strength>=2 (too strict on 500-candle crypto windows).
+  // Now keep all zones; quality filters downstream still require strength>=1
+  // and validated S/R; this just gives the engine more material to work with.
+  return mg;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -5997,6 +6009,8 @@ function renderLiveFeedNotifs() {
 }
 
 function playExecTone(tone) {
+  if (!S.soundEnabled) return;
+  const ctx = (typeof getAudioCtx === 'function') ? getAudioCtx() : null;
   if (!ctx) return;
   const tones = {
     touch:    [587.33, 739.99],                 // D5 → F#5 — curious double-ping
@@ -6843,9 +6857,13 @@ function render() {
   const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
 
   const RP = 70, CW = W - RP;
-  const vEnd = Math.min(S.vStart + S.vCount, S.candles.length);
+  // v24.1: support fractional vStartI for smooth pan — floor for loop indexing,
+  // but keep the float version for sub-pixel tX translation (no stutter).
+  const vStartF = S.vStart;
+  const vStartI = Math.floor(vStartF);
+  const vEnd = Math.min(vStartI + Math.ceil(S.vCount) + 1, S.candles.length);
   const cw = CW / S.vCount, hw = Math.max(.5, cw * .38);
-  const tX = i => (i - S.vStart) * cw + cw / 2;
+  const tX = i => (i - vStartF) * cw + cw / 2;
 
   let yo = 0; const P = {};
   for (const p of PNLS) { const ph = Math.floor(H * p.r); P[p.id] = { y: yo, h: ph }; yo += ph; }
@@ -6858,7 +6876,7 @@ function render() {
   // ─── MAIN PANEL ────────────────────────────────────────
   const { y: MY, h: MH } = P.main;
   let lo = Infinity, hi = -Infinity;
-  for (let i = S.vStart; i < vEnd; i++) {
+  for (let i = vStartI; i < vEnd; i++) {
     lo = Math.min(lo, S.candles[i].l); hi = Math.max(hi, S.candles[i].h);
     if (bbs.lo[i]) { lo = Math.min(lo, bbs.lo[i]); hi = Math.max(hi, bbs.u[i]); }
   }
@@ -6872,15 +6890,15 @@ function render() {
 
   // BB fill
   ctx.beginPath(); let ff = true;
-  for (let i = S.vStart; i < vEnd; i++) { if (!bbs.u[i]) continue; ff ? (ctx.moveTo(tX(i),pY(bbs.u[i])), ff=false) : ctx.lineTo(tX(i),pY(bbs.u[i])); }
-  for (let i = vEnd-1; i >= S.vStart; i--) { if (!bbs.lo[i]) continue; ctx.lineTo(tX(i),pY(bbs.lo[i])); }
+  for (let i = vStartI; i < vEnd; i++) { if (!bbs.u[i]) continue; ff ? (ctx.moveTo(tX(i),pY(bbs.u[i])), ff=false) : ctx.lineTo(tX(i),pY(bbs.u[i])); }
+  for (let i = vEnd-1; i >= vStartI; i--) { if (!bbs.lo[i]) continue; ctx.lineTo(tX(i),pY(bbs.lo[i])); }
   ctx.closePath(); ctx.fillStyle = 'rgba(91,108,246,.04)'; ctx.fill();
 
   // BB bands
   ctx.setLineDash([3,5]);
   for (const [arr,col] of [[bbs.u,'rgba(91,108,246,.35)'],[bbs.lo,'rgba(91,108,246,.35)']]) {
     ctx.strokeStyle=col; ctx.lineWidth=1; ff=true; ctx.beginPath();
-    for (let i=S.vStart;i<vEnd;i++) { if(!arr[i])continue; ff?(ctx.moveTo(tX(i),pY(arr[i])),ff=false):ctx.lineTo(tX(i),pY(arr[i])); }
+    for (let i=vStartI;i<vEnd;i++) { if(!arr[i])continue; ff?(ctx.moveTo(tX(i),pY(arr[i])),ff=false):ctx.lineTo(tX(i),pY(arr[i])); }
     ctx.stroke();
   }
   ctx.setLineDash([]);
@@ -6897,7 +6915,7 @@ function render() {
   // Active signal levels
   const ls = S.sigs.length ? S.sigs[S.sigs.length-1] : null;
   const isActive = ls && !['WIN','LOSS','EXPIRED'].includes(ls.status);
-  if (ls && ls.idx >= S.vStart && ls.idx < vEnd && isActive) {
+  if (ls && ls.idx >= vStartI && ls.idx < vEnd && isActive) {
     const ex = tX(ls.idx), ep = pY(ls.entry), slp = pY(ls.sl), tpp = pY(ls.tp);
     // Shaded profit zone
     ctx.fillStyle = 'rgba(0,200,150,.035)';
@@ -6918,7 +6936,7 @@ function render() {
       ctx.setLineDash([]);
     }
     // Activation marker (if trade was activated)
-    if (ls.activatedIdx !== null && ls.activatedIdx >= S.vStart && ls.activatedIdx < vEnd) {
+    if (ls.activatedIdx !== null && ls.activatedIdx >= vStartI && ls.activatedIdx < vEnd) {
       const ax = tX(ls.activatedIdx);
       const ay = pY(ls.activatedPrice);
       ctx.fillStyle = '#22d3ee';
@@ -6940,16 +6958,16 @@ function render() {
 
   // EMA 200
   ctx.strokeStyle='#f59e0b'; ctx.lineWidth=1.5; ff=true; ctx.beginPath();
-  for (let i=S.vStart;i<vEnd;i++) { if(!e200[i])continue; ff?(ctx.moveTo(tX(i),pY(e200[i])),ff=false):ctx.lineTo(tX(i),pY(e200[i])); }
+  for (let i=vStartI;i<vEnd;i++) { if(!e200[i])continue; ff?(ctx.moveTo(tX(i),pY(e200[i])),ff=false):ctx.lineTo(tX(i),pY(e200[i])); }
   ctx.stroke();
 
   // EMA 50
   ctx.strokeStyle='#22d3ee'; ctx.lineWidth=1.5; ff=true; ctx.beginPath();
-  for (let i=S.vStart;i<vEnd;i++) { if(!e50[i])continue; ff?(ctx.moveTo(tX(i),pY(e50[i])),ff=false):ctx.lineTo(tX(i),pY(e50[i])); }
+  for (let i=vStartI;i<vEnd;i++) { if(!e50[i])continue; ff?(ctx.moveTo(tX(i),pY(e50[i])),ff=false):ctx.lineTo(tX(i),pY(e50[i])); }
   ctx.stroke();
 
   // Candles
-  for (let i=S.vStart; i<vEnd; i++) {
+  for (let i=vStartI; i<vEnd; i++) {
     const c=S.candles[i], x=tX(i), up=c.c>=c.o;
     ctx.strokeStyle = up?'#00c896':'#f0334e'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(x,pY(c.h)); ctx.lineTo(x,pY(c.l)); ctx.stroke();
@@ -6960,7 +6978,7 @@ function render() {
 
   // Signal markers
   for (const sg of S.sigs) {
-    if (sg.idx<S.vStart || sg.idx>=vEnd) continue;
+    if (sg.idx<vStartI || sg.idx>=vEnd) continue;
     const x=tX(sg.idx), buy=sg.dir==='BUY', col=buy?'#00ff9d':'#ff3860', ms=8;
     const col2=sg.status==='WIN'?'#00c896':sg.status==='LOSS'?'#f0334e':sg.status==='EXPIRED'?'#374555':col;
     ctx.fillStyle = col2+'cc';
@@ -6973,7 +6991,7 @@ function render() {
   }
 
   // Crosshair
-  if (S.hovIdx!==null && S.hovIdx>=S.vStart && S.hovIdx<vEnd) {
+  if (S.hovIdx!==null && S.hovIdx>=vStartI && S.hovIdx<vEnd) {
     const x=tX(S.hovIdx);
     ctx.strokeStyle='rgba(255,255,255,.07)'; ctx.lineWidth=1; ctx.setLineDash([3,4]);
     ctx.beginPath(); ctx.moveTo(x,MY); ctx.lineTo(x,MY+MH); ctx.stroke();
@@ -7006,14 +7024,14 @@ function render() {
   const { y: VY, h: VH } = P.vol;
   ctx.fillStyle='#030408'; ctx.fillRect(0,VY,W,VH);
   ctx.strokeStyle='#0b0d18'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,VY); ctx.lineTo(W,VY); ctx.stroke();
-  const maxV = Math.max(...vols.slice(S.vStart,vEnd), 1);
-  for (let i=S.vStart; i<vEnd; i++) {
+  const maxV = Math.max(...vols.slice(vStartI,vEnd), 1);
+  for (let i=vStartI; i<vEnd; i++) {
     const x=tX(i), vh=(vols[i]/maxV)*(VH-3);
     ctx.fillStyle=S.candles[i].c>=S.candles[i].o?'rgba(0,200,150,.45)':'rgba(240,51,78,.45)';
     ctx.fillRect(x-hw, VY+VH-vh-1, hw*2, vh);
   }
   ctx.strokeStyle='rgba(245,158,11,.4)'; ctx.lineWidth=1; ff=true; ctx.beginPath();
-  for (let i=S.vStart;i<vEnd;i++) { const x=tX(i),y=VY+VH-(avgs[i]/maxV)*(VH-3)-1; ff?(ctx.moveTo(x,y),ff=false):ctx.lineTo(x,y); }
+  for (let i=vStartI;i<vEnd;i++) { const x=tX(i),y=VY+VH-(avgs[i]/maxV)*(VH-3)-1; ff?(ctx.moveTo(x,y),ff=false):ctx.lineTo(x,y); }
   ctx.stroke();
   ctx.fillStyle='#1a2535'; ctx.font='7px monospace'; ctx.textAlign='left'; ctx.fillText('VOL',3,VY+9);
 
@@ -7032,7 +7050,7 @@ function render() {
     ctx.fillStyle='#1a2535'; ctx.font='7px monospace'; ctx.textAlign='left'; ctx.fillText(lvl,CW+2,rToY(lvl)+3);
   }
   ctx.strokeStyle='#a78bfa'; ctx.lineWidth=1.5; ff=true; ctx.beginPath();
-  for (let i=S.vStart;i<vEnd;i++) { if(rsiArr[i]===null)continue; const x=tX(i),y=rToY(rsiArr[i]); ff?(ctx.moveTo(x,y),ff=false):ctx.lineTo(x,y); }
+  for (let i=vStartI;i<vEnd;i++) { if(rsiArr[i]===null)continue; const x=tX(i),y=rToY(rsiArr[i]); ff?(ctx.moveTo(x,y),ff=false):ctx.lineTo(x,y); }
   ctx.stroke();
   const lr = rsiArr[S.candles.length-1];
   if (lr !== null) {
@@ -7046,12 +7064,12 @@ function render() {
   const { y: MacY, h: MacH } = P.macd;
   ctx.fillStyle='#020306'; ctx.fillRect(0,MacY,W,MacH);
   ctx.strokeStyle='#0b0d18'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,MacY); ctx.lineTo(W,MacY); ctx.stroke();
-  const hs = mac.hist.slice(S.vStart,vEnd).filter(v=>v!==null);
+  const hs = mac.hist.slice(vStartI,vEnd).filter(v=>v!==null);
   if (hs.length) {
     const mm = Math.max(...hs.map(Math.abs))*1.2||1;
     const mY = v => MacY+MacH/2-(v/mm)*MacH/2;
     ctx.strokeStyle='#0b0d18'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,MacY+MacH/2); ctx.lineTo(CW,MacY+MacH/2); ctx.stroke();
-    for (let i=S.vStart;i<vEnd;i++) {
+    for (let i=vStartI;i<vEnd;i++) {
       if (mac.hist[i]===null) continue;
       const x=tX(i), y0=MacY+MacH/2, yH=mY(mac.hist[i]);
       const grow = mac.hist[i-1]!==null && Math.abs(mac.hist[i])>Math.abs(mac.hist[i-1]);
@@ -7059,10 +7077,10 @@ function render() {
       ctx.fillRect(x-hw, Math.min(y0,yH), hw*2, Math.abs(yH-y0));
     }
     ctx.strokeStyle='#60a5fa'; ctx.lineWidth=1.5; ff=true; ctx.beginPath();
-    for (let i=S.vStart;i<vEnd;i++) { const v=mac.line[i]; if(v==null)continue; const x=tX(i),y=mY(v); ff?(ctx.moveTo(x,y),ff=false):ctx.lineTo(x,y); }
+    for (let i=vStartI;i<vEnd;i++) { const v=mac.line[i]; if(v==null)continue; const x=tX(i),y=mY(v); ff?(ctx.moveTo(x,y),ff=false):ctx.lineTo(x,y); }
     ctx.stroke();
     ctx.strokeStyle='#fbbf24'; ctx.lineWidth=1; ff=true; ctx.beginPath();
-    for (let i=S.vStart;i<vEnd;i++) { if(mac.signal[i]===null)continue; const x=tX(i),y=mY(mac.signal[i]); ff?(ctx.moveTo(x,y),ff=false):ctx.lineTo(x,y); }
+    for (let i=vStartI;i<vEnd;i++) { if(mac.signal[i]===null)continue; const x=tX(i),y=mY(mac.signal[i]); ff?(ctx.moveTo(x,y),ff=false):ctx.lineTo(x,y); }
     ctx.stroke();
   }
   ctx.fillStyle='#1a2535'; ctx.font='7px monospace'; ctx.textAlign='left'; ctx.fillText('MACD(12,26,9)',3,MacY+9);
@@ -7072,7 +7090,7 @@ function render() {
   ctx.fillStyle='#020306'; ctx.fillRect(0,TAY,W,16);
   const step=Math.max(1,Math.floor(S.vCount/6));
   ctx.fillStyle='#1a2030'; ctx.font='7px monospace'; ctx.textAlign='center';
-  for (let i=S.vStart;i<vEnd;i+=step) {
+  for (let i=vStartI;i<vEnd;i+=step) {
     const d=new Date(S.candles[i].t);
     ctx.fillText(d.toLocaleDateString('en',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',hour12:false}), tX(i), TAY+11);
   }
@@ -8813,44 +8831,172 @@ function showToast(msg, dur=3500) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// SECTION 14 — CANVAS EVENTS
+// SECTION 14 — CANVAS EVENTS (v24.1 — TradingView-style smooth pan/zoom + touch)
 // ═══════════════════════════════════════════════════════════
 
 const cv = document.getElementById('cv');
+
+// Visual hint that the chart is interactive
+cv.style.cursor = 'grab';
+cv.style.touchAction = 'none'; // we handle gestures ourselves
+
+// ── Helper: clamp viewport to valid range ─────────────────────────────────
+function _clampView() {
+  S.vCount = Math.max(20, Math.min(S.candles.length || 400, S.vCount));
+  S.vStart = Math.max(0, Math.min((S.candles.length || 0) - S.vCount, S.vStart));
+}
+
+// ── Helper: zoom around a screen X position (cursor anchor) ───────────────
+function _zoomAt(clientX, factor) {
+  if (!S.candles.length) return;
+  const rect = cv.getBoundingClientRect();
+  const innerW = rect.width - 70;
+  const cw    = innerW / S.vCount;
+  const idxAtCursor = Math.floor((clientX - rect.left) / cw) + S.vStart;
+  const newCount = Math.max(20, Math.min(S.candles.length, Math.round(S.vCount * factor)));
+  // keep candle under cursor stationary
+  const ratio = (idxAtCursor - S.vStart) / S.vCount;
+  S.vCount = newCount;
+  S.vStart = Math.round(idxAtCursor - ratio * S.vCount);
+  _clampView();
+  S.needsRender = true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// MOUSE WHEEL — zoom around cursor
+// ─────────────────────────────────────────────────────────────────────────
 cv.addEventListener('wheel', e => {
   e.preventDefault();
-  S.vCount = Math.max(20, Math.min(400, Math.round(S.vCount * (e.deltaY > 0 ? 1.12 : .89))));
-  S.vStart = Math.max(0, Math.min(S.candles.length - S.vCount, S.vStart));
-  S.needsRender = true;
+  _zoomAt(e.clientX, e.deltaY > 0 ? 1.12 : 0.89);
 }, { passive: false });
 
-cv.addEventListener('mousedown', e => { S.drag = { on: true, x0: e.clientX, v0: S.vStart }; });
+// ─────────────────────────────────────────────────────────────────────────
+// MOUSE DRAG — smooth pan with float precision (no more stutter)
+// ─────────────────────────────────────────────────────────────────────────
+cv.addEventListener('mousedown', e => {
+  S.drag = { on: true, x0: e.clientX, v0: S.vStart };
+  cv.style.cursor = 'grabbing';
+});
+
 cv.addEventListener('mousemove', e => {
-  const rect=cv.getBoundingClientRect(), cw2=(rect.width-70)/S.vCount;
-  const idx=Math.floor((e.clientX-rect.left)/cw2)+S.vStart;
-  S.hovIdx = Math.max(0, Math.min(S.candles.length-1, idx));
+  const rect = cv.getBoundingClientRect();
+  const innerW = rect.width - 70;
+  const cw2 = innerW / S.vCount;
+  const idx = Math.floor((e.clientX - rect.left) / cw2) + S.vStart;
+  S.hovIdx = Math.max(0, Math.min(S.candles.length - 1, idx));
   if (S.candles[S.hovIdx]) {
     updOHLCV(S.candles[S.hovIdx]);
     if (S.ind) {
-      const rv=S.ind.rsi[S.hovIdx],mh=S.ind.macd.hist[S.hovIdx],av=S.ind.atr[S.hovIdx];
-      const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-      set('hrsi',rv!==null?`RSI:${rv.toFixed(1)}`:'');
-      set('hmacd',mh!==null?`MACD:${mh.toFixed(5)}`:'');
-      set('hatr',av?`ATR:${av>=1?av.toFixed(2):av.toFixed(5)}`:'');
+      const rv = S.ind.rsi[S.hovIdx], mh = S.ind.macd.hist[S.hovIdx], av = S.ind.atr[S.hovIdx];
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      set('hrsi', rv !== null ? `RSI:${rv.toFixed(1)}` : '');
+      set('hmacd', mh !== null ? `MACD:${mh.toFixed(5)}` : '');
+      set('hatr', av ? `ATR:${av >= 1 ? av.toFixed(2) : av.toFixed(5)}` : '');
     }
   }
   if (S.drag.on) {
-    const d=-Math.round((e.clientX-S.drag.x0)/cw2);
-    S.vStart = Math.max(0, Math.min(S.candles.length-S.vCount, S.drag.v0+d));
+    // Smooth float-precision pan (was Math.round → caused stutter)
+    const d = -((e.clientX - S.drag.x0) / cw2);
+    S.vStart = S.drag.v0 + d;
+    _clampView();
   }
   S.needsRender = true;
 });
-cv.addEventListener('mouseup', () => S.drag.on = false);
+
+cv.addEventListener('mouseup',   () => { S.drag.on = false; cv.style.cursor = 'grab'; });
 cv.addEventListener('mouseleave', () => {
-  S.drag.on=false; S.hovIdx=null;
-  ['hrsi','hmacd','hatr'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='';});
-  if(S.candles.length) updOHLCV(S.candles[S.candles.length-1]);
-  S.needsRender=true;
+  S.drag.on = false; S.hovIdx = null;
+  cv.style.cursor = 'grab';
+  ['hrsi', 'hmacd', 'hatr'].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = ''; });
+  if (S.candles.length) updOHLCV(S.candles[S.candles.length - 1]);
+  S.needsRender = true;
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// DOUBLE-CLICK — reset zoom to default 100 candles
+// ─────────────────────────────────────────────────────────────────────────
+cv.addEventListener('dblclick', () => {
+  S.vCount = Math.min(100, S.candles.length || 100);
+  S.vStart = Math.max(0, (S.candles.length || 0) - S.vCount);
+  S.needsRender = true;
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// KEYBOARD — arrow keys pan, +/- zoom, Home jumps to latest
+// ─────────────────────────────────────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  let handled = true;
+  const step = Math.max(1, Math.round(S.vCount * 0.1));
+  if (e.key === 'ArrowLeft')       S.vStart -= step;
+  else if (e.key === 'ArrowRight') S.vStart += step;
+  else if (e.key === '+' || e.key === '=') S.vCount = Math.max(20, Math.round(S.vCount * 0.85));
+  else if (e.key === '-' || e.key === '_') S.vCount = Math.min(S.candles.length || 400, Math.round(S.vCount * 1.18));
+  else if (e.key === 'Home' || e.key === 'End') {
+    S.vStart = Math.max(0, (S.candles.length || 0) - S.vCount);
+  } else handled = false;
+  if (handled) { e.preventDefault(); _clampView(); S.needsRender = true; }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// TOUCH — single-finger pan, two-finger pinch-zoom (mobile/tablet)
+// ─────────────────────────────────────────────────────────────────────────
+let _touch = { mode: null, x0: 0, v0: 0, dist0: 0, count0: 0, midX: 0 };
+
+function _touchDist(t) {
+  const dx = t[0].clientX - t[1].clientX;
+  const dy = t[0].clientY - t[1].clientY;
+  return Math.hypot(dx, dy);
+}
+
+cv.addEventListener('touchstart', e => {
+  if (e.touches.length === 1) {
+    _touch = { mode: 'pan', x0: e.touches[0].clientX, v0: S.vStart };
+  } else if (e.touches.length === 2) {
+    _touch = {
+      mode: 'pinch',
+      dist0: _touchDist(e.touches),
+      count0: S.vCount,
+      midX: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+    };
+  }
+  e.preventDefault();
+}, { passive: false });
+
+cv.addEventListener('touchmove', e => {
+  if (!_touch.mode || !S.candles.length) return;
+  const rect = cv.getBoundingClientRect();
+  const innerW = rect.width - 70;
+  if (_touch.mode === 'pan' && e.touches.length === 1) {
+    const cw = innerW / S.vCount;
+    const d = -((e.touches[0].clientX - _touch.x0) / cw);
+    S.vStart = _touch.v0 + d;
+    _clampView();
+    // Also update crosshair on touch
+    const idx = Math.floor((e.touches[0].clientX - rect.left) / cw) + Math.floor(S.vStart);
+    S.hovIdx = Math.max(0, Math.min(S.candles.length - 1, idx));
+    S.needsRender = true;
+  } else if (_touch.mode === 'pinch' && e.touches.length === 2) {
+    const dist = _touchDist(e.touches);
+    const factor = _touch.dist0 / Math.max(1, dist);
+    const newCount = Math.max(20, Math.min(S.candles.length, Math.round(_touch.count0 * factor)));
+    // keep midpoint stable
+    const cw     = innerW / S.vCount;
+    const idxAtMid = Math.floor((_touch.midX - rect.left) / cw) + S.vStart;
+    const ratio  = (idxAtMid - S.vStart) / S.vCount;
+    S.vCount = newCount;
+    S.vStart = Math.round(idxAtMid - ratio * S.vCount);
+    _clampView();
+    S.needsRender = true;
+  }
+  e.preventDefault();
+}, { passive: false });
+
+cv.addEventListener('touchend', e => {
+  if (e.touches.length === 0) { _touch.mode = null; S.hovIdx = null; S.needsRender = true; }
+  else if (e.touches.length === 1) {
+    _touch = { mode: 'pan', x0: e.touches[0].clientX, v0: S.vStart };
+  }
 });
 
 new ResizeObserver(() => S.needsRender = true).observe(document.getElementById('cwrap'));
