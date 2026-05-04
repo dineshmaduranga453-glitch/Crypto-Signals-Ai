@@ -2679,13 +2679,13 @@ const CFG = {
   // ── SIGNAL QUALITY GATE SYSTEM (v10 — STRICT) ───────────────────────────
   // v10: rebuilt 4-condition strict gate. EMA trend + RSI are HARD blocks.
   QUALITY_GATE_MIN: 3,              // HARD GATE: need >=3/4 pts (EMA+RSI always mandatory)
-  // RSI thresholds — v21 STRICT trend-following momentum bands
-  // BUY  requires RSI 55–70 (bullish momentum already engaged, not overbought)
-  // SELL requires RSI 30–45 (bearish momentum already engaged, not oversold)
-  RSI_BUY_MIN:  55,                 // HARD: BUY requires RSI >= 55
-  RSI_BUY_MAX:  70,                 // HARD: BUY requires RSI <= 70
-  RSI_SELL_MIN: 30,                 // HARD: SELL requires RSI >= 30
-  RSI_SELL_MAX: 45,                 // HARD: SELL requires RSI <= 45
+  // RSI thresholds — early entry bands (catch move at the START, not after)
+  // BUY  requires RSI 35–55 (recovering from oversold, trend turning up)
+  // SELL requires RSI 45–65 (turning from overbought, trend turning down)
+  RSI_BUY_MIN:  35,                 // HARD: BUY requires RSI >= 35
+  RSI_BUY_MAX:  55,                 // HARD: BUY requires RSI <= 55
+  RSI_SELL_MIN: 45,                 // HARD: SELL requires RSI >= 45
+  RSI_SELL_MAX: 65,                 // HARD: SELL requires RSI <= 65
   // Legacy RSI thresholds kept for display compatibility
   RSI_OB_MAX: 72,
   RSI_OS_MIN: 28,
@@ -3417,17 +3417,17 @@ function scoreCandidate(cs, id, i, dir) {
   score += sc.trend;
 
   // ══ [2] RSI COMPONENT — 30 pts ════════════════════════════════════════════
-  // v21 STRICT: BUY  requires RSI 55–70   SELL requires RSI 30–45
+  // Early entry: BUY 35–55 (turn up from oversold)  SELL 45–65 (turn down from overbought)
   // Sweet-spot near the middle of each range earns the most points.
   if (rv !== null) {
     if (dir === 'LONG') {
-      if (rv >= 58 && rv <= 65)       sc.rsiS = 30;  // ideal bullish momentum
-      else if (rv >= 55 && rv <= 70)  sc.rsiS = 22;  // inside strict band
-      // outside 55–70 → 0 (hard-blocked by qualityGate)
+      if (rv >= 40 && rv <= 50)       sc.rsiS = 30;  // ideal early bullish turn
+      else if (rv >= 35 && rv <= 55)  sc.rsiS = 22;  // inside early-entry band
+      // outside 35–55 → 0 (hard-blocked by qualityGate)
     } else {
-      if (rv >= 32 && rv <= 40)       sc.rsiS = 30;  // ideal bearish momentum
-      else if (rv >= 30 && rv <= 45)  sc.rsiS = 22;  // inside strict band
-      // outside 30–45 → 0
+      if (rv >= 50 && rv <= 60)       sc.rsiS = 30;  // ideal early bearish turn
+      else if (rv >= 45 && rv <= 65)  sc.rsiS = 22;  // inside early-entry band
+      // outside 45–65 → 0
     }
   }
   score += sc.rsiS;
@@ -3545,9 +3545,9 @@ function qualityGate(cs, id, i, dir) {
     reasons.push({ name: 'EMA', pass: true, detail: `EMA20 < EMA50 ✓` });
   }
 
-  // ── [2] RSI CONFIRMATION — HARD REQUIREMENT (v21 TREND-FOLLOWING) ─────────
-  // BUY requires RSI in [RSI_BUY_MIN, RSI_BUY_MAX]   (50–70 : bullish, not OB).
-  // SELL requires RSI in [RSI_SELL_MIN, RSI_SELL_MAX] (30–50 : bearish, not OS).
+  // ── [2] RSI CONFIRMATION — HARD REQUIREMENT (early entry bands) ───────────
+  // BUY requires RSI in [RSI_BUY_MIN, RSI_BUY_MAX]   (35–55 : recovering, not yet overbought).
+  // SELL requires RSI in [RSI_SELL_MIN, RSI_SELL_MAX] (45–65 : fading, not yet oversold).
   if (rsiVal === null) {
     reasons.push({ name: 'RSI', pass: false, detail: 'RSI N/A' });
     return { qScore: -1, passed: false, reasons, blocked: 'RSI_NULL' };
@@ -3749,7 +3749,8 @@ function sessionLabel(timestampSec) {
   if (h >= 12 && h < 16) return 'LONDON+NY';   // overlap window — highest liquidity
   if (h >= 7  && h < 12) return 'LONDON';
   if (h >= 16 && h < 21) return 'NEW_YORK';
-  return 'OFF_HOURS';
+  if (h >= 1  && h < 7)  return 'ASIA';        // v30: ASIA session (Tokyo/Singapore)
+  return 'OFF_HOURS';                           // 21:00–01:00 UTC — true dead zone
 }
 
 /**
@@ -4396,9 +4397,10 @@ function runEngine(cs, id) {
     const mtfBonus = mtfAligned * 5;
     score = Math.min(score + mtfBonus, 100);
 
-    // [C] SCORE GATE — MODE-AWARE (v29): STRICT=75, NORMAL=CFG.SIGNAL_MIN_SCORE
+    // [C] SCORE GATE — MODE-AWARE (v29): STRICT=75, NORMAL=scoreEffective (AI Smart Filter aware)
     const _engineMode = (typeof MODE !== 'undefined') ? MODE : 'NORMAL';
-    const _engineScoreMin = (_engineMode === 'STRICT') ? 75 : CFG.SIGNAL_MIN_SCORE; // v29: was 85
+    const _scoreEffMin = (window.S?.ctrl?.scoreEffective ?? CFG.SIGNAL_MIN_SCORE);
+    const _engineScoreMin = (_engineMode === 'STRICT') ? Math.max(75, _scoreEffMin) : _scoreEffMin; // v30: use AI Smart Filter value
     if (score < _engineScoreMin) { S.blockedCount++; continue; }
 
     // ── [D] QUALITY GATE (v11 — STRICT) ──────────────────────────────────────
@@ -4621,11 +4623,11 @@ function runEngine(cs, id) {
 // ═══════════════════════════════════════════════════════════════════════════
 const QUALITY_V21 = {
   MIN_CONFIDENCE: 85,      // below this → NO SIGNAL
-  // Tightened RSI bands — strict trend-following momentum
-  RSI_BUY_MIN:    55,      // BUY: momentum already rising
-  RSI_BUY_MAX:    70,      // BUY: still not overbought
-  RSI_SELL_MIN:   30,      // SELL: not yet oversold
-  RSI_SELL_MAX:   45,      // SELL: momentum already falling
+  // Tightened RSI bands — early entry (catch the move before it runs)
+  RSI_BUY_MIN:    35,      // BUY: recovering from oversold, turn beginning
+  RSI_BUY_MAX:    55,      // BUY: not yet overbought
+  RSI_SELL_MIN:   45,      // SELL: turning from overbought
+  RSI_SELL_MAX:   65,      // SELL: momentum already fading
   PER_CONDITION:  25,      // 4 conditions × 25 = 100
   SWING_LOOKBACK: 20,      // bars to scan for swing low/high
   BUCKET_BREAKOUT_LOOKBACK: 20, // bars to find previous high/low for breakout confirmation
@@ -4869,7 +4871,8 @@ function applyStrictLevels(sig, cs, quality) {
 
     // ── Step 5: MODE GATE — one place, no repeats ─────────────────────────
     const _m         = (typeof MODE !== 'undefined') ? MODE : 'NORMAL';
-    const _floor     = (_m === 'STRICT') ? 75 : CFG.SIGNAL_MIN_SCORE;
+    const _scoreEff  = (window.S?.ctrl?.scoreEffective ?? CFG.SIGNAL_MIN_SCORE); // v30: AI Smart Filter aware
+    const _floor     = (_m === 'STRICT') ? Math.max(75, _scoreEff) : _scoreEff;
     const _minQ      = (_m === 'STRICT') ? 4  : 3;
 
     const passed = scored.filter(function(sig) {
@@ -4883,7 +4886,7 @@ function applyStrictLevels(sig, cs, quality) {
       return true;
     });
 
-    console.log(
+    if (window.SX_DEBUG?.is?.()) console.log(
       '%c[Pipeline v24] base=' + raw.length +
       ' rewritten=' + rewritten.length +
       ' scored=' + scored.length +
@@ -5230,11 +5233,12 @@ const AutoScoring = (function() {
     // MODE-based filter: STRICT uses cfg.scoreMin (85), NORMAL uses configured base
     const cfg = (typeof getModeConfig === 'function') ? getModeConfig() : { scoreMin: 75 }; // v29: was 85
     const currentMode = (typeof MODE !== 'undefined') ? MODE : 'STRICT';
+    const _scoreEffAuto = (window.S?.ctrl?.scoreEffective ?? CFG.SIGNAL_MIN_SCORE); // v30: AI Smart Filter
     let threshold;
     if (currentMode === 'STRICT') {
-      threshold = cfg.scoreMin;           // 85 in STRICT — high accuracy gate
+      threshold = Math.max(cfg.scoreMin, _scoreEffAuto); // STRICT: never below AI-adjusted floor
     } else {
-      threshold = CFG.SIGNAL_MIN_SCORE;   // NORMAL: use configured base (69)
+      threshold = _scoreEffAuto;   // NORMAL: respect AI Smart Filter value
     }
     // v23.1 FIX: removed Math.min(threshold, 60) override — mode is now respected
     const effectiveThreshold = threshold;
@@ -6400,9 +6404,9 @@ function recordTrade(sig) {
 
   let pnl;
   if (sig.status === 'WIN') {
-    pnl = (riskAmt * effRR) - totalFees;
+    pnl = (riskAmt * Math.abs(effRR)) - totalFees;           // WIN: effRR always positive
   } else {
-    pnl = (riskAmt * effRR) - totalFees;
+    pnl = -(riskAmt * Math.abs(effRR)) - totalFees;          // LOSS: always negative outflow
   }
 
   sig.pnlDollar     = +pnl.toFixed(2);
@@ -13809,13 +13813,10 @@ console.log('[SignalX v9] PRO system initialized ✓ — Firebase + Sound + AI +
         return [];
       }
 
-      // ── FIX 7: Debug log — indicator vs candle lengths ───────────────────────
-      console.log({
-        candles: cs.length,
-        vols:    id.vols?.length,
-        avgVol:  id.avgVol?.length,
-        e50:     id.e50?.length,
-        e200:    id.e200?.length,
+      // ── FIX 7: Debug log — indicator vs candle lengths (debug-only) ─────────
+      if (window.SX_DEBUG?.is?.()) console.log('[extractCandidates]', {
+        candles: cs.length, vols: id.vols?.length, avgVol: id.avgVol?.length,
+        e50: id.e50?.length, e200: id.e200?.length,
       });
 
       // ── FIX 6: Loop starts at 50 instead of 210 ──────────────────────────────
@@ -13891,7 +13892,7 @@ console.log('[SignalX v9] PRO system initialized ✓ — Firebase + Sound + AI +
           ema50:      id.e50?.[i]          ?? null,
           ema200:     id.e200?.[i]         ?? null,
           atr:        id.atr?.[i]          ?? null,
-          bb:         id.bb ? { upper: id.bb.up?.[i], mid: id.bb.mid?.[i], lower: id.bb.lo?.[i] } : null,
+          bb:         id.bb ? { upper: id.bb.u?.[i], mid: id.bb.mid?.[i], lower: id.bb.lo?.[i] } : null,
           volume:     vol,
           avgVolume:  avgVol,
         };
@@ -14068,8 +14069,8 @@ window.SniperEngine = (function buildSniperEngine(){
     const isStrict = (window.MODE === 'STRICT');
     const minVol   = _minVol();
 
-    // Session: STRICT blocks OFF+ASIA; NORMAL only blocks OFF
-    if (!data.session || data.session === 'OFF') {
+    // Session: STRICT blocks OFF_HOURS+ASIA; NORMAL only blocks OFF_HOURS
+    if (!data.session || data.session === 'OFF_HOURS') {
       return reject(`off session: ${data.session}`, data);
     }
     if (isStrict && data.session === 'ASIA') {
