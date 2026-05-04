@@ -3734,9 +3734,11 @@ function computeSLTP(cs, id, i, dir, score, smartCtx) {
  * @returns {boolean} true if inside active session window
  */
 function isActiveSession(timestampSec) {
-  if (!timestampSec) return false;
-  const hour = new Date(timestampSec * 1000).getUTCHours();
-  return hour >= CFG.SESSION_START_UTC && hour < CFG.SESSION_END_UTC;
+  // v25.5: always-on. User opted to allow signals 24/7. Original code below preserved for reference.
+  return true;
+  // if (!timestampSec) return false;
+  // const hour = new Date(timestampSec * 1000).getUTCHours();
+  // return hour >= CFG.SESSION_START_UTC && hour < CFG.SESSION_END_UTC;
 }
 
 /**
@@ -14078,13 +14080,9 @@ window.SniperEngine = (function buildSniperEngine(){
     const isStrict = (window.MODE === 'STRICT');
     const minVol   = _minVol();
 
-    // Session: STRICT blocks OFF_HOURS+ASIA; NORMAL only blocks OFF_HOURS
-    if (!data.session || data.session === 'OFF_HOURS') {
-      return reject(`off session: ${data.session}`, data);
-    }
-    if (isStrict && data.session === 'ASIA') {
-      return reject(`weak session (STRICT): ${data.session}`, data);
-    }
+    // Session: v25.6 — both NORMAL and STRICT now allow signals 24/7 (user choice).
+    // Session label is still computed and stored on the signal for reference, but
+    // it is no longer a rejection criterion.
     if (data.volRatio < minVol) {
       return reject(`volRatio ${data.volRatio.toFixed(2)} < ${minVol}`, data);
     }
