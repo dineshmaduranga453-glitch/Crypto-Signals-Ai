@@ -2704,10 +2704,10 @@ const CFG = {
 
   // ── v11 ELITE PRECISION FILTER CONSTANTS ──────────────────────────────────
   // Pullback confirmation
-  PB_LOOKBACK:       5,             // candles to look back for pullback touch
+  PB_LOOKBACK:       10,            // v25.4: was 5; widened so pullback touches that happened 6-10 bars ago still count
   PB_EMA_TOLERANCE:  0.005,         // 0.5%: how close wick must get to EMA20
   PB_SR_TOLERANCE:   0.008,         // 0.8%: how close wick must get to S/R zone
-  PB_MIN_BODY_RATIO: 0.30,          // confirmation candle body must be >= 30% of range
+  PB_MIN_BODY_RATIO: 0.20,          // v25.3: was 0.30; relaxed for more pullback confirmations (live in-progress candles naturally have small bodies)
   // Strict entry zone: price must be within this % of S/R to enter
   SR_ENTRY_MAX_DIST: 0.015,         // 1.5% max distance to nearest S/R level
 
@@ -2728,7 +2728,7 @@ const CFG = {
   SWEEP_MIN_WICK_PCT:   0.30,       // wick must be >= 30% of candle range
   // Fake breakout filter
   FAKEOUT_LOOKBACK:       10,       // prior-high/low lookback window
-  FAKEOUT_RECENT_WINDOW:  5,        // check last N candles for failed breakout
+  FAKEOUT_RECENT_WINDOW:  2,        // v25.1: was 5; narrowed so stale fakeouts (>2 candles old) don't disqualify a setup that has since broken cleanly above resistance
   FAKEOUT_MAX_WICK_PCT:   0.50,     // reject if opposing wick > 50% of range
   FAKEOUT_MAX_BODY_PCT:   0.30,     // combined with small body (< 30%)
   // Tier thresholds
@@ -3818,7 +3818,11 @@ function confirmPullback(cs, id, i, dir) {
   }
 
   // Current candle must be a directional confirmation candle
-  const candle    = cs[i];
+  // v25.3: for the LIVE in-progress bar, the body is partial and unreliable.
+  // Use the most recently CLOSED candle as the confirmation candle instead.
+  const _isLivePB = (i === cs.length - 1);
+  const _confIdx  = _isLivePB ? Math.max(0, i - 1) : i;
+  const candle    = cs[_confIdx];
   const cRange    = (candle.h - candle.l) || 0.0001;
   const cBody     = Math.abs(candle.c - candle.o);
   const bodyRatio = cBody / cRange;
@@ -13831,7 +13835,12 @@ console.log('[SignalX v9] PRO system initialized ✓ — Firebase + Sound + AI +
         const vol      = id.vols?.[i];
         const avgVol   = id.avgVol?.[i] || 1;
         // ── FIX 3b: safe volRatio ────────────────────────────────────────────
-        const volRatio = (id.vols?.[i] || 0) / (id.avgVol?.[i] || 1);
+        // v25.2: for the LIVE in-progress candle, the partial volume produces
+        // misleading ratios (often <0.05). Use the last CLOSED candle's volume
+        // for the gate when judging a live setup. Historical bars unaffected.
+        const _isLiveBar = (i === cs.length - 1);
+        const _volIdx    = _isLiveBar ? Math.max(0, i - 1) : i;
+        const volRatio = (id.vols?.[_volIdx] || 0) / (id.avgVol?.[_volIdx] || 1);
 
         const slope   = emaTrend(id.e50, i);
         const relDist = emaDistance(id.e50, id.e200, i) / 100;
@@ -13974,7 +13983,7 @@ window.SniperEngine = (function buildSniperEngine(){
   // Derived helpers — resolved at call time based on window.MODE
   function _minScore()  { return (window.MODE === 'STRICT') ? MIN_SCORE_STRICT  : MIN_SCORE_NORMAL; }
   function _minQScore() { return (window.MODE === 'STRICT') ? MIN_QSCORE_STRICT : MIN_QSCORE_NORMAL; }
-  function _minVol()    { return (window.MODE === 'STRICT') ? MIN_VOL_RATIO     : 0.6; }
+  function _minVol()    { return (window.MODE === 'STRICT') ? MIN_VOL_RATIO     : 0.30; }  // v25.1: lowered NORMAL floor 0.6→0.30 (was rejecting 100% of candidates because live-candle volRatios cluster at 0.31–0.33)
   const MIN_SIGNAL_GAP      = 10;       // candles between same-dir signals
   const MIN_TRADES_TO_JUDGE = 8;
   const MIN_WIN_RATE        = 0.60;
