@@ -6,7 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>SignalX Pro — v23 GOD-Mode Dashboard</title>
+<title>SignalX Pro — v34 MERGED</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- EARLY PAINT: dark before any CSS/JS loads -->
 <style>html,body,#app{background:#010208!important}#ovload,#overr,#cwrap,#ccol,#col-center,#cv{background:#010208!important}</style>
 <!-- CRASH GUARD: surface any JS error visibly -->
@@ -243,13 +245,16 @@ console.log('%c[SignalX] Debug toggle: SX_DEBUG.on() / SX_DEBUG.off() / SX_DEBUG
 </script>
 <style>
 :root{
-  --c0:#010208;--c1:#03040b;--c2:#05060e;--c3:#070912;--c4:#0a0c18;--c5:#0d101e;
-  --brd:#0f1220;--brd2:#161a28;
-  --t0:#dde5f0;--t1:#7a8a9c;--t2:#374555;--t3:#1b2230;
-  --g:#00c896;--g2:rgba(0,200,150,.12);
+  /* ── v34 MERGED PALETTE ── */
+  --c0:#010208;--c1:#03060f;--c2:#060a14;--c3:#0a0e1a;--c4:#0d1220;--c5:#111828;
+  --brd:#141c2e;--brd2:#1e2840;
+  --t0:#e8edf8;--t1:#8a9ab8;--t2:#445568;--t3:#1e2d3e;
+  --g:#00c896;--g2:rgba(0,200,150,.12);--g3:rgba(0,200,150,.05);
   --r:#f0334e;--r2:rgba(240,51,78,.12);
   --bl:#22d3ee;--am:#f59e0b;--pu:#a78bfa;--in:#5b6cf6;--te:#2dd4bf;--ye:#fbbf24;
-  --font:'Cascadia Code','Fira Code','SF Mono',monospace;
+  /* v34: dual font stack — mono for data, sans for labels */
+  --font:'IBM Plex Mono','Cascadia Code','Fira Code',monospace;
+  --sans:'Space Grotesk','IBM Plex Sans',sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;background:var(--c0);overflow:hidden;font-family:var(--font);font-size:11px;color:var(--t1)}
@@ -262,7 +267,8 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
 /* ── Layout ── */
 #app{display:flex;flex-direction:column;height:100vh}
 #topbar{display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--c1);border-bottom:1px solid var(--brd);flex-shrink:0;flex-wrap:wrap;min-height:40px;z-index:20}
-#logo{font-size:11px;font-weight:700;letter-spacing:4px;color:var(--g);margin-right:3px;white-space:nowrap}
+#logo{font-size:13px;font-weight:700;letter-spacing:-.3px;color:var(--g);margin-right:3px;white-space:nowrap;font-family:var(--sans)}
+#logo .v-tag{font-size:8px;color:#ffcc00;letter-spacing:2px;opacity:.9;font-family:var(--font);font-weight:400}
 .sep{width:1px;height:16px;background:var(--brd2);flex-shrink:0}
 .cbtn,.tbtn{padding:2px 8px;border:1px solid var(--brd2);background:var(--c3);color:var(--t2);cursor:pointer;border-radius:2px;font-size:9px;font-family:var(--font);transition:all .1s;white-space:nowrap;letter-spacing:1px}
 .cbtn.on{background:var(--g);color:var(--c0);font-weight:700;border-color:var(--g)}
@@ -292,9 +298,9 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
 .kpi{flex:1;min-width:95px;padding:6px 12px;display:flex;flex-direction:column;justify-content:center;gap:1px;border-right:1px solid var(--brd);position:relative;transition:background .15s}
 .kpi:hover{background:var(--c3)}
 .kpi:last-child{border-right:none}
-.kpl{font-size:7px;color:var(--t3);letter-spacing:1.5px;font-weight:600}
-.kpv{font-size:13px;font-weight:700;letter-spacing:-.3px;line-height:1.2}
-.kpd{font-size:7px;color:var(--t2);letter-spacing:.5px;opacity:.8}
+.kpl{font-size:6px;color:var(--t3);letter-spacing:1.5px;font-weight:700;font-family:var(--sans);text-transform:uppercase}
+.kpv{font-size:14px;font-weight:700;letter-spacing:-.5px;line-height:1.2;font-family:var(--font)}
+.kpd{font-size:7px;color:var(--t2);letter-spacing:.3px;opacity:.8}
 
 /* ── Scanner panel ── */
 .scanrow{background:var(--c0);border:1px solid var(--brd);border-radius:3px;padding:7px 9px;margin-bottom:3px;display:flex;align-items:center;gap:9px;cursor:pointer;transition:all .12s}
@@ -379,11 +385,114 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
 .pin{width:88px;background:var(--c0);border:1px solid var(--brd2);color:var(--t0);font-size:9px;font-family:var(--font);padding:3px 6px;border-radius:2px;text-align:right}
 .pin:focus{outline:none;border-color:rgba(0,200,150,.35)}
 
-/* Signal log entries */
-.sle{background:var(--c0);border:1px solid var(--brd);border-radius:2px;padding:5px 8px;margin-bottom:3px}
-.sle .st{display:flex;justify-content:space-between;align-items:center}
-.sle .sb2{display:flex;justify-content:space-between;margin-top:2px;font-size:8px;color:var(--t3)}
-.outcome{font-size:8px;font-weight:700;padding:1px 6px;border-radius:2px}
+
+/* ═══════════════════════════════════════════
+   v34 MERGED — NEW DESIGN SYSTEM ADDITIONS
+   ═══════════════════════════════════════════ */
+
+/* ── Score Ring (from v1 React design) ── */
+.score-ring{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.score-ring svg{transform:rotate(-90deg)}
+.score-ring-val{position:absolute;font-family:var(--font);font-weight:700;text-align:center;line-height:1;pointer-events:none}
+
+/* ── Enhanced tier badges ── */
+.tier-sniper{color:#ff3b6b!important;background:rgba(255,59,107,.1);border:1px solid rgba(255,59,107,.5)!important;font-size:6px;padding:1px 5px;border-radius:2px;font-weight:700;letter-spacing:1.5px;animation:sniperPulse 2s ease-in-out infinite}
+.tier-elite{color:var(--gold)!important;background:rgba(240,230,140,.1);border:1px solid rgba(240,230,140,.35)!important}
+.tier-strong{color:var(--g)!important;background:rgba(0,200,150,.1);border:1px solid rgba(0,200,150,.3)!important}
+.tier-normal{color:var(--am)!important;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25)!important}
+@keyframes sniperPulse{0%,100%{box-shadow:0 0 0 rgba(255,59,107,0)}50%{box-shadow:0 0 12px rgba(255,59,107,.35)}}
+
+/* ── Signal card improvements ── */
+.v13-sig{border-radius:3px!important;border-left:3px solid var(--brd2)!important}
+.v13-sig.buy-sig{border-left-color:var(--g)!important;background:linear-gradient(90deg,rgba(0,200,150,.04),var(--c0))!important}
+.v13-sig.sell-sig{border-left-color:var(--r)!important;background:linear-gradient(90deg,rgba(240,51,78,.04),var(--c0))!important}
+.v13-sig .sym{font-family:var(--sans)!important;font-size:12px!important;font-weight:700!important}
+
+/* ── Stats strip enhancements ── */
+.ss-lbl{font-family:var(--sans)!important;letter-spacing:1.5px!important}
+.ss-val{font-family:var(--font)!important}
+
+/* ── Live feed card improvements ── */
+.af-sym{font-family:var(--sans)!important;font-size:13px!important}
+.af-r-val{font-family:var(--font)!important}
+.afs-lbl{font-family:var(--sans)!important;letter-spacing:1px!important}
+
+/* ── KPI mini strip ── */
+.kms-lbl{font-family:var(--sans)!important}
+.kms-val{font-family:var(--font)!important}
+
+/* ── Signal param rows ── */
+.prow .pl{font-family:var(--sans)!important;letter-spacing:.5px}
+.prow .pv{font-family:var(--font)!important}
+
+/* ── Trade ledger ── */
+.tl-r-large{font-family:var(--font)!important}
+
+/* ── Enhanced equity bar with gradient ── */
+#equityBar{height:2px;background:var(--c3);flex-shrink:0;overflow:hidden}
+#equityBarFill{height:2px;background:linear-gradient(90deg,var(--g),var(--bl));transition:width .8s ease;border-radius:0 1px 1px 0}
+
+/* ── SCORE RING in signal panel (injected via JS) ── */
+#sigScoreRing{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 10px;border-right:1px solid var(--brd);flex-shrink:0;min-width:88px}
+#sigScoreRing .sr-label{font-size:6px;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;font-family:var(--sans)}
+
+/* ── Center signal panel level grid (from v1 React design) ── */
+#sigLevelGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px 10px}
+.sig-lv-box{display:flex;flex-direction:column;gap:2px}
+.sig-lv-lbl{font-size:7px;color:var(--t3);letter-spacing:1px;text-transform:uppercase;font-family:var(--sans)}
+.sig-lv-val{font-size:11px;font-weight:700;font-family:var(--font)}
+
+/* ── Watchlist sym uses sans ── */
+.wnm{font-family:var(--sans)!important;font-size:11px!important}
+.wp{font-family:var(--font)!important}
+
+/* ── Tab labels use sans ── */
+.sta{font-family:var(--sans)!important;letter-spacing:.5px!important}
+.sbt{font-family:var(--sans)!important;letter-spacing:2px!important}
+.ctrl-title{font-family:var(--sans)!important}
+.ai-title{font-family:var(--sans)!important}
+
+/* ── Scanner improvements ── */
+.scansym .nm{font-family:var(--sans)!important;font-size:11px!important}
+.scanscore .pt{font-family:var(--font)!important}
+
+/* ── Signal banners ── */
+#sigBanner{font-family:var(--font)!important;letter-spacing:1px!important}
+
+/* ── Active trades HUD font ── */
+#sx-athud{font-family:var(--font)!important}
+
+/* ── Scrollbar refinement ── */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--t3)}
+
+/* ── Float panel ── */
+#v17FloatPanel{border:1px solid var(--brd2)!important;border-radius:4px!important}
+#v17fp-header{font-family:var(--sans)!important}
+
+/* ── TOPBAR UPGRADE: larger price display ── */
+#lprice{font-size:18px!important;font-weight:700!important;letter-spacing:-.8px!important}
+#topbar{min-height:42px!important}
+
+/* ── Mode buttons ── */
+#modeBtnNormal,#modeBtnStrict{font-family:var(--sans)!important;font-size:9px!important}
+
+/* ── Quick bar ── */
+.v17qbtn{font-family:var(--sans)!important;font-size:8px!important}
+
+/* ── Equity progress bar pulse on profit ── */
+@keyframes eqPulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* ── Confirmation dots in signal panel ── */
+.conf-dot-row{display:flex;gap:4px;margin-top:4px}
+.conf-dot{width:7px;height:7px;border-radius:50%;border:1px solid var(--brd2);flex-shrink:0;transition:all .3s}
+.conf-dot.on{background:var(--g);border-color:var(--g);box-shadow:0 0 4px rgba(0,200,150,.4)}
+.conf-dot.off{background:transparent}
+.conf-dot-lbl{font-size:6px;color:var(--t3);font-family:var(--sans);letter-spacing:.5px}
+
+
 
 /* ── SIGNAL STRENGTH COLORS ── */
 /* GREEN: score >= 90 (STRONG) */
@@ -1475,7 +1584,7 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
 
 <!-- TOP BAR -->
 <div id="topbar">
-  <div id="logo">◈ SIGNALX PRO <span style="font-size:7px;color:#ffcc00;letter-spacing:2px;opacity:.95">v23 GOD</span></div>
+  <div id="logo">◈ SIGNALX <span style="color:var(--t1);font-weight:400">PRO</span> <span class="v-tag">v34</span></div>
   <div class="sep"></div>
   <div id="coinrow"></div>
   <div class="sep"></div>
@@ -1902,6 +2011,7 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
           <div class="sck" id="sckrow"></div>
         </div>
         <div id="plovels"></div>
+        <div id="sigparams"></div>
         <div id="rrow" style="display:none">
           <div style="display:flex;justify-content:space-between;margin-top:4px">
             <span style="font-size:7px;color:var(--t3)">RISK / REWARD</span>
@@ -2661,7 +2771,7 @@ const CFG = {
   RR_STRONG: 3.0,                 // target RR for score >= 90 (ELITE)
   RR_MODERATE: 2.0,               // target RR for score 75–84
   RR_WEAK: 1.8,                   // target RR for score 65–74 (never used — blocked by SIGNAL_MIN_SCORE)
-  ENTRY_ZONE_ATR_MULT: 0.3,       // ±0.3× ATR around entry
+  ENTRY_ZONE_ATR_MULT: 0.5,       // v33: was 0.3 — wider zone for more activations       // ±0.3× ATR around entry
   SL_MIN_DIST_PCT: 0.004,         // SL must be at least 0.4% from entry
   SL_MAX_DIST_PCT: 0.06,          // SL must be at most 6% from entry
   VOLUME_STRONG_MIN: 1.2,         // volume ratio required for "strong" setups
@@ -2669,7 +2779,7 @@ const CFG = {
   SWING_VALIDATION_LOOKBACK: 20,  // candles to validate swing
   SWING_MIN_TOUCHES: 2,           // swing must be touched at least N times to be valid
   // Elite execution management
-  ENTRY_EXPIRY_CANDLES: 15,       // cancel WAITING signal if zone not touched within N candles
+  ENTRY_EXPIRY_CANDLES: 40,       // v33: was 15 — give signals much more time       // cancel WAITING signal if zone not touched within N candles
   BREAKEVEN_TRIGGER: 1.0,         // move SL to entry when price reaches entry ± (1R)
   PARTIAL_TP_TRIGGER: 2.0,        // close 50% at entry ± (2R)
   PARTIAL_TP_FRACTION: 0.5,       // fraction of position closed at partial TP
@@ -2678,14 +2788,14 @@ const CFG = {
 
   // ── SIGNAL QUALITY GATE SYSTEM (v10 — STRICT) ───────────────────────────
   // v10: rebuilt 4-condition strict gate. EMA trend + RSI are HARD blocks.
-  QUALITY_GATE_MIN: 3,              // HARD GATE: need >=3/4 pts (EMA+RSI always mandatory)
+  QUALITY_GATE_MIN: 2,              // v31 NORMAL: 2/4 pts enough (was 3 — blocking most setups)
   // RSI thresholds — early entry bands (catch move at the START, not after)
   // BUY  requires RSI 35–55 (recovering from oversold, trend turning up)
   // SELL requires RSI 45–65 (turning from overbought, trend turning down)
-  RSI_BUY_MIN:  35,                 // HARD: BUY requires RSI >= 35
-  RSI_BUY_MAX:  55,                 // HARD: BUY requires RSI <= 55
-  RSI_SELL_MIN: 45,                 // HARD: SELL requires RSI >= 45
-  RSI_SELL_MAX: 65,                 // HARD: SELL requires RSI <= 65
+  RSI_BUY_MIN:  30,                 // v31 NORMAL: wider window (was 35)
+  RSI_BUY_MAX:  62,                 // v31 NORMAL: wider window (was 55)
+  RSI_SELL_MIN: 38,                 // v31 NORMAL: wider window (was 45)
+  RSI_SELL_MAX: 70,                 // v31 NORMAL: wider window (was 65)
   // Legacy RSI thresholds kept for display compatibility
   RSI_OB_MAX: 72,
   RSI_OS_MIN: 28,
@@ -2750,19 +2860,20 @@ const CFG = {
 // QUALITY GATES — v23.1 tuned (user-confirmed values)
 // Balanced for signal flow + accuracy, not maximum restriction
 // ═══════════════════════════════════════════════════════════
-CFG.SIGNAL_MIN_SCORE    = 65;       // v29: was 69/70; relaxed to 65 for NORMAL mode
-CFG.VOL_SPIKE_MIN       = 1.2;      // v29: user-specified 1.2 (was 0.6/1.5)
+CFG.SIGNAL_MIN_SCORE    = 45;       // v32: was 60 — unblock signal generation
+CFG.VOL_SPIKE_MIN       = 0.7;      // v31 NORMAL: relaxed from 1.2 → 0.7 (was blocking most candles)
 CFG.SESSION_START_UTC   = 0;        // 24/7 (crypto never sleeps)
 CFG.SESSION_END_UTC     = 24;
-CFG.EMA_SLOPE_THRESHOLD = 0.00005;  // v23.1: moderate slope — catches early trends, not just crawls
-CFG.SIDEWAYS_THRESHOLD  = 0.00005;  // unchanged
-CFG.ATR_VOL_RATIO       = 0.03;     // unchanged
-CFG.MAX_EMA_CROSSES     = 15;       // unchanged
-CFG.TREND_STRENGTH_MIN  = 0.10;     // v23.1: 0.10% EMA spread — clear bias without over-filtering
-CFG.MIN_SIGNAL_GAP      = 3;        // v23.1: 3-candle buffer — prevents zone spam, allows quick follow
-CFG.MIN_RR              = 1.5;      // v23.1: 1.5 R:R — confirmed ✅
-CFG.MIN_RR_PRECISION    = 1.5;      // v23.1: matched to MIN_RR
+CFG.EMA_SLOPE_THRESHOLD = 0.00003;  // v32: was 0.00005 — catch flatter trends
+CFG.SIDEWAYS_THRESHOLD  = 0.00003;  // v32: matched to slope
+CFG.ATR_VOL_RATIO       = 0.02;     // v32: was 0.03 — allow calmer markets
+CFG.MAX_EMA_CROSSES     = 20;       // v32: was 15 — crypto is choppy
+CFG.TREND_STRENGTH_MIN  = 0.05;     // v32: was 0.10 — halved to allow earlier entries
+CFG.MIN_SIGNAL_GAP      = 2;        // v32: was 3 — tighter gap for more signals
+CFG.MIN_RR              = 1.2;      // v32: was 1.5 — allow decent setups through
+CFG.MIN_RR_PRECISION    = 1.2;      // v32: matched to MIN_RR
 CFG.ELITE_REQUIRE_CONFLUENCE = false; // drop the all-or-nothing elite gate
+CFG.QUALITY_GATE_MIN    = 1;        // v32: was 2 — just need basic alignment
 
 // ── v29.1 SIGNAL UNLOCK FIX ──────────────────────────────────────────────────
 // Diagnostic showed 450 candidates → 0 accepted, all rejected for
@@ -2770,8 +2881,8 @@ CFG.ELITE_REQUIRE_CONFLUENCE = false; // drop the all-or-nothing elite gate
 //   1) Widen S/R entry zone (1.5% → 3%) — crypto routinely swings >1.5%
 //      between zones. 3% still keeps signals near structure.
 //   2) Lower SR_PROXIMITY_WEAK to match — used by quality gate scoring.
-CFG.SR_ENTRY_MAX_DIST  = 0.03;   // was 0.015 — widen entry zone to 3%
-CFG.SR_PROXIMITY_WEAK  = 0.04;   // was 0.03  — keep scoring band a touch wider
+CFG.SR_ENTRY_MAX_DIST  = 0.05;   // v32: was 0.03 — widen entry zone to 5% (S/R is soft gate now)
+CFG.SR_PROXIMITY_WEAK  = 0.06;   // v32: was 0.04 — match wider zone
 
 // ═══════════════════════════════════════════════════════════
 // SECTION 2 — STATE
@@ -2805,8 +2916,8 @@ const S = {
     signalsEnabled: true,
     alertsEnabled:  true,
     aiEnabled:      true,
-    scoreBase:      70,        // base score minimum (v10: raised to 70 with strict filter)
-    scoreEffective: 70,        // effective score after smart filter
+    scoreBase:      60,        // v31 NORMAL: relaxed to 60 (was 70 — was blocking all trades)
+    scoreEffective: 60,        // v31 NORMAL: relaxed to 60
     smartFilterMode: 'normal', // 'tight' | 'normal' | 'relaxed'
   },
 
@@ -3679,10 +3790,11 @@ function computeSLTP(cs, id, i, dir, score, smartCtx) {
   const slDistPct = Math.abs(entry - sl) / entry;
   if (slDistPct < CFG.SL_MIN_DIST_PCT || slDistPct > CFG.SL_MAX_DIST_PCT) return null;
 
-  // ── 5. Dynamic Take Profit based on score tier (v10 thresholds) ──
+  // ── 5. Dynamic Take Profit based on score tier (v32 expanded) ──
   const targetRR = score >= 90 ? CFG.RR_STRONG    // ELITE: 3.0R (90+)
                  : score >= 80 ? CFG.RR_MODERATE   // Very Strong: 2.0R (80–89)
-                 : CFG.RR_WEAK;                    // Strong: 1.8R (70–79)
+                 : score >= 70 ? CFG.RR_WEAK       // Strong: 1.8R (70–79)
+                 : 1.5;                             // v32: Standard: 1.5R (50–69)
   const risk = Math.abs(entry - sl);
   let tp;
   if (dir === 'LONG') tp = entry + risk * targetRR;
@@ -4331,55 +4443,47 @@ function runEngine(cs, id) {
   const out = [];
   S.blockedCount = 0;
 
+  // v32: diagnostic counters — track where candidates die
+  const _diag = { total:0, vol:0, slope:0, sideways:0, atr:0, crosses:0, notrend:0, strength:0, sr:0, scored:0, scoreMin:0, qGate:0, perTrend:0, gap:0, fakeout:0, sltp:0, rr:0, accepted:0 };
+
   // ── Per-direction signal tracker for "max 1 per trend" rule ───────────────
-  // Stores the candle index of the last accepted signal per direction.
-  // Reset when EMA20/50 crosses (trend reversal detected).
   const lastSigIdx = { LONG: -1, SHORT: -1 };
 
   for (let i = 210; i < cs.length; i++) {
     const p = cs[i].c;
+    _diag.total++;
 
     // ── [0] MARKET SESSION FILTER — HARD (v12) ────────────────────────────────
-    // Block signals outside London + New York window (07:00–21:00 UTC).
-    // Asia-only hours, weekend drift, and overnight gaps are rejected entirely.
     if (!isActiveSession(cs[i].t)) { S.blockedCount++; continue; }
 
     // ── [0b] VOLUME SPIKE FILTER — HARD (v12) ─────────────────────────────────
-    // Current volume must be at least VOL_SPIKE_MIN × the rolling average.
-    // No spike = no institutional participation = no signal.
     const volRatio = id.vols[i] / (id.avgVol[i] || 1);
-    // FIX: only hard-block on vol in STRICT mode; NORMAL mode uses lower threshold
     const _mode = typeof MODE !== 'undefined' ? MODE : 'NORMAL';
-    if (_mode === 'STRICT' && volRatio < CFG.VOL_SPIKE_MIN) { S.blockedCount++; continue; }
-    if (_mode !== 'STRICT' && volRatio < 0.3) { S.blockedCount++; continue; } // v29: near-zero vol only (was 0.5)
+    if (_mode === 'STRICT' && volRatio < CFG.VOL_SPIKE_MIN) { _diag.vol++; S.blockedCount++; continue; }
+    if (_mode !== 'STRICT' && volRatio < 0.3) { _diag.vol++; S.blockedCount++; continue; }
 
     // ── PRE-FILTERS ──
     const slope = emaTrend(id.e50, i);
-    if (Math.abs(slope) < CFG.EMA_SLOPE_THRESHOLD) continue;
+    if (Math.abs(slope) < CFG.EMA_SLOPE_THRESHOLD) { _diag.slope++; continue; }
 
     const relDist = emaDistance(id.e50, id.e200, i) / 100;
-    if (relDist < CFG.SIDEWAYS_THRESHOLD) continue;
+    if (relDist < CFG.SIDEWAYS_THRESHOLD) { _diag.sideways++; continue; }
 
     const avgA = id.atr.slice(Math.max(0, i - 14), i).reduce((a, b) => a + b, 0) / 14;
-    if (id.atr[i] < avgA * CFG.ATR_VOL_RATIO) continue;
+    if (id.atr[i] < avgA * CFG.ATR_VOL_RATIO) { _diag.atr++; continue; }
 
     let crosses = 0;
     for (let j = Math.max(1, i - 20); j < i; j++)
       if ((id.e50[j] > id.e200[j]) !== (id.e50[j - 1] > id.e200[j - 1])) crosses++;
-    if (crosses >= CFG.MAX_EMA_CROSSES) continue;
+    if (crosses >= CFG.MAX_EMA_CROSSES) { _diag.crosses++; continue; }
 
-    // ── DETERMINE CANDIDATE DIRECTION — v10 STRICT ──────────────────────────
-    // Rule: BUY only if ema20 > ema50 / SELL only if ema20 < ema50
-    // (Triple stack e200 alignment is a bonus in scoring, NOT a gate here)
     const bullTrend = id.e20[i] > id.e50[i];
     const bearTrend = id.e20[i] < id.e50[i];
-    if (!bullTrend && !bearTrend) continue;
+    if (!bullTrend && !bearTrend) { _diag.notrend++; continue; }
     const dir = bullTrend ? 'LONG' : 'SHORT';
 
-    // ── TREND STRENGTH QUALITY FILTER ──
-    // Require EMA20 and EMA50 to be at least TREND_STRENGTH_MIN% apart
     const emaStrength = Math.abs(id.e20[i] - id.e50[i]) / id.e50[i] * 100;
-    if (emaStrength < CFG.TREND_STRENGTH_MIN) continue;
+    if (emaStrength < CFG.TREND_STRENGTH_MIN) { _diag.strength++; continue; }
 
     // ── [A] PULLBACK CONFIRMATION (v11, v20 softened) ─────────────────────────
     // Original v11 behaviour: HARD-reject if no pullback.
@@ -4387,15 +4491,14 @@ function runEngine(cs, id) {
     // We still compute pbResult here so confluence gate can consider both.
     const pbResult = confirmPullback(cs, id, i, dir);
 
-    // ── [B] STRICT ENTRY ZONE — HARD REQUIREMENT (v11) ───────────────────────
-    // BUY only if price is within 1.5% of a validated support level
-    // SELL only if price is within 1.5% of a validated resistance level
-    // If price is not near S/R → REJECT
+    // ── [B] STRICT ENTRY ZONE — v32: HARD in STRICT, SOFT in NORMAL ─────────
+    // v32 FIX: S/R proximity was the #1 signal killer. In NORMAL mode it's now
+    // a scoring bonus (+5 if near S/R) instead of a hard gate. STRICT unchanged.
     const srProx = checkSRProximity(id, i, dir, p);
-    if (!srProx.found) { S.blockedCount++; continue; }
+    if (!srProx.found && _mode === 'STRICT') { _diag.sr++; S.blockedCount++; continue; }
 
     const scored = scoreCandidate(cs, id, i, dir);
-    if (!scored) { S.blockedCount++; continue; }
+    if (!scored) { _diag.scored++; S.blockedCount++; continue; }
     let { score, sc, pullback } = scored;
 
     // ── MTF bonus (up to +15) ──────────────────────────────────────────────
@@ -4403,27 +4506,25 @@ function runEngine(cs, id) {
     const mtfBonus = mtfAligned * 5;
     score = Math.min(score + mtfBonus, 100);
 
-    // [C] SCORE GATE — MODE-AWARE (v29): STRICT=75, NORMAL=scoreEffective (AI Smart Filter aware)
+    // v32: S/R proximity bonus (replaces hard gate in NORMAL mode)
+    if (srProx.found) score = Math.min(score + 5, 100);
+
+    // [C] SCORE GATE — v32: STRICT=75, NORMAL=50 (was 60 — too restrictive with other gates)
     const _engineMode = (typeof MODE !== 'undefined') ? MODE : 'NORMAL';
     const _scoreEffMin = (window.S?.ctrl?.scoreEffective ?? CFG.SIGNAL_MIN_SCORE);
-    const _engineScoreMin = (_engineMode === 'STRICT') ? Math.max(75, _scoreEffMin) : _scoreEffMin; // v30: use AI Smart Filter value
-    if (score < _engineScoreMin) { S.blockedCount++; continue; }
+    const _engineScoreMin = (_engineMode === 'STRICT') ? Math.max(75, _scoreEffMin) : Math.min(_scoreEffMin, 50);
+    if (score < _engineScoreMin) { _diag.scoreMin++; S.blockedCount++; continue; }
 
-    // ── [D] QUALITY GATE (v11 — STRICT) ──────────────────────────────────────
-    // [1] EMA TREND (HARD): ema20 > ema50 for LONG / ema20 < ema50 for SHORT
-    // [2] RSI   (HARD): RSI < 35 for BUY / RSI > 65 for SELL
-    // [3] S/R proximity (soft)
-    // [4] Candle strength (soft)
+    // ── [D] QUALITY GATE — v32: STRICT=4/4, NORMAL=1/4 (was 2/4) ───────────
     const gate = qualityGate(cs, id, i, dir);
-    // v23.1: STRICT requires 4/4 (qScore=4), NORMAL requires 3/4 (CFG.QUALITY_GATE_MIN=3)
     const _gMode    = (typeof MODE !== 'undefined') ? MODE : 'NORMAL';
-    const _gMinQ    = (_gMode === 'STRICT') ? 4 : CFG.QUALITY_GATE_MIN;
-    if (!gate.passed || gate.qScore < _gMinQ) { S.blockedCount++; continue; }
+    const _gMinQ    = (_gMode === 'STRICT') ? 4 : 1; // v32: 1/4 in NORMAL — just need basic trend alignment
+    if (gate.qScore < _gMinQ) { _diag.qGate++; S.blockedCount++; continue; }
 
-    // ── [E] MAX 1 SIGNAL PER COIN PER TREND (v11) ────────────────────────────
-    // Allow new signal only if EMA20/50 has crossed (trend reversed) since
-    // the last accepted signal in the same direction. No reversal → skip.
-    if (lastSigIdx[dir] >= 0) {
+    // ── [E] MAX 1 SIGNAL PER COIN PER TREND — v32: STRICT only ─────────────
+    // v32: In NORMAL mode, MIN_SIGNAL_GAP is enough spacing.
+    // 1-per-trend was killing ALL repeat signals even in strong trends.
+    if (_gMode === 'STRICT' && lastSigIdx[dir] >= 0) {
       let hadReversal = false;
       for (let j = lastSigIdx[dir] + 1; j <= i; j++) {
         const prevBull = id.e20[j - 1] > id.e50[j - 1];
@@ -4434,64 +4535,43 @@ function runEngine(cs, id) {
     }
 
     const last = out[out.length - 1];
-    if (last && i - last.idx < CFG.MIN_SIGNAL_GAP) continue;
+    if (last && i - last.idx < CFG.MIN_SIGNAL_GAP) { _diag.gap++; continue; }
 
-    // ── [F] FAKE BREAKOUT FILTER — HARD (v14) ────────────────────────────────
-    // Reject if market has just shown a failed breakout/breakdown or big
-    // opposing wick rejection — we'd be trading into a trap.
+    // ── [F] FAKE BREAKOUT FILTER — v32: HARD in STRICT, penalty in NORMAL ───
     const fakeout = detectFakeBreakout(cs, id, i, dir);
-    if (fakeout.fake) { S.blockedCount++; continue; }
+    if (fakeout.fake) {
+      if (_gMode === 'STRICT') { _diag.fakeout++; S.blockedCount++; continue; }
+      // NORMAL: reduce score instead of rejecting
+      score = Math.max(score - 10, 0);
+      if (score < 40) { _diag.fakeout++; S.blockedCount++; continue; } // absolute floor
+    }
 
     // ── [G] LIQUIDITY SWEEP DETECTION (v14) — quality signal ─────────────────
-    // Not a hard gate. Promotes signal to SNIPER tier + raises confidence.
     const sweep = detectLiquiditySweep(cs, id, i, dir);
 
     // ── [G2] v20 BREAK OF STRUCTURE (BOS) + RETEST DETECTION ─────────────────
-    // Detect structural shift (swing break) and whether price has retested
-    // the broken level. These inform the smart entry and confluence gate.
     const bos    = detectBOS(cs, id, i, dir);
     const retest = detectRetest(cs, id, i, dir, bos);
 
-    // ── [G3] v20 ELITE CONFLUENCE GATE — HARD ────────────────────────────────
-    // Elite signals require ALL THREE:
-    //   1. TREND         → already confirmed by EMA trend + strength
-    //   2. LIQUIDITY     → BOS detected OR liquidity sweep detected
-    //   3. CONFIRMATION  → retest confirmed OR pullback confirmed (pbResult)
-    // Without at least one liquidity element AND confirmation, the signal is
-    // just a trend follower — not an ELITE smart entry.
+    // ── [G3] CONFLUENCE GATE — STRICT only ────────────────────────────────
     const hasLiquidity    = bos.detected || sweep.detected;
     const hasConfirmation = retest.retested || pbResult.confirmed;
-    // [G3] CONFLUENCE GATE — v23.1: active in STRICT mode, skipped in NORMAL
     const _cMode = (typeof MODE !== 'undefined') ? MODE : 'NORMAL';
     if (_cMode === 'STRICT' && (!hasLiquidity || !hasConfirmation)) {
       S.blockedCount++;
       continue;
     }
 
-
-
-
-
-
-
-
-
-
-
-    // ── [G4] v20 SMART ENTRY COMPUTATION ─────────────────────────────────────
-    // Determine the optimal entry price + mode based on what was detected:
-    //   BOS + retest  → CONFIRMED   (best R/R)
-    //   BOS only      → AGGRESSIVE  (momentum)
-    //   Sweep only    → SWEEP       (reversal)
-    //   Else          → PULLBACK/BREAKOUT (legacy)
+    // ── [G4] SMART ENTRY COMPUTATION ─────────────────────────────────────
     const smartCtx = computeSmartEntry(cs, id, i, dir, bos, sweep, retest);
 
-    // Build precision setup — pass score for dynamic RR targeting + smartCtx for entry
     const setup = computeSLTP(cs, id, i, dir, score, smartCtx);
-    if (!setup) continue;                           // SL distance filter failed
-    if (setup.rr < CFG.MIN_RR_PRECISION) continue;  // hard RR floor
+    if (!setup) { _diag.sltp++; continue; }
+    if (setup.rr < CFG.MIN_RR_PRECISION) { _diag.rr++; continue; }
 
-    const label = score >= 90 ? 'ELITE' : score >= 80 ? 'Very Strong' : score >= 70 ? 'Strong' : 'Blocked';
+    _diag.accepted++;
+
+    const label = score >= 90 ? 'ELITE' : score >= 80 ? 'Very Strong' : score >= 70 ? 'Strong' : score >= 50 ? 'Standard' : 'Entry';
     const legacyDir = dir === 'LONG' ? 'BUY' : 'SELL';
     const session = sessionLabel(cs[i].t);
 
@@ -4608,6 +4688,20 @@ function runEngine(cs, id) {
       pnlDollar: null,
     });
   }
+
+  // v32: Diagnostic summary — always log so user can see filter breakdown
+  const _total = _diag.total;
+  const _surv = _diag.accepted;
+  console.log(
+    `%c[SignalX v32 ENGINE] ${S.sym} · ${_surv}/${_total} survived\n` +
+    `  vol:${_diag.vol} slope:${_diag.slope} sideways:${_diag.sideways} atr:${_diag.atr} crosses:${_diag.crosses}\n` +
+    `  notrend:${_diag.notrend} strength:${_diag.strength} sr:${_diag.sr} scored:${_diag.scored}\n` +
+    `  scoreMin:${_diag.scoreMin} qGate:${_diag.qGate} perTrend:${_diag.perTrend} gap:${_diag.gap}\n` +
+    `  fakeout:${_diag.fakeout} sltp:${_diag.sltp} rr:${_diag.rr}`,
+    _surv > 0 ? 'color:#00c896;font-weight:700' : 'color:#f59e0b'
+  );
+  S._lastDiag = _diag;
+
   return out;
 }
 
@@ -4629,11 +4723,11 @@ function runEngine(cs, id) {
 // ═══════════════════════════════════════════════════════════════════════════
 const QUALITY_V21 = {
   MIN_CONFIDENCE: 85,      // below this → NO SIGNAL
-  // Tightened RSI bands — early entry (catch the move before it runs)
-  RSI_BUY_MIN:    35,      // BUY: recovering from oversold, turn beginning
-  RSI_BUY_MAX:    55,      // BUY: not yet overbought
-  RSI_SELL_MIN:   45,      // SELL: turning from overbought
-  RSI_SELL_MAX:   65,      // SELL: momentum already fading
+  // v31: widened RSI bands to match CFG (was 35-55 BUY / 45-65 SELL — too tight)
+  RSI_BUY_MIN:    30,      // v31: was 35
+  RSI_BUY_MAX:    62,      // v31: was 55
+  RSI_SELL_MIN:   38,      // v31: was 45
+  RSI_SELL_MAX:   70,      // v31: was 65
   PER_CONDITION:  25,      // 4 conditions × 25 = 100
   SWING_LOOKBACK: 20,      // bars to scan for swing low/high
   BUCKET_BREAKOUT_LOOKBACK: 20, // bars to find previous high/low for breakout confirmation
@@ -4940,9 +5034,9 @@ const MODE_CONFIG = {
     requireConfluence:true,  // runEngine G3 confluence gate on
   },
   NORMAL: {
-    scoreMin:         65,    // v29: was 75; relaxed NORMAL threshold
-    confidenceMin:    50,    // v29: was 75; 2/4 conditions ⇒ 50%
-    minConditions:    2,     // v29: was 3; tolerate two missing conditions
+    scoreMin:         45,    // v32: was 65; unblock signal flow
+    confidenceMin:    30,    // v32: was 50; let weaker but valid setups through
+    minConditions:    1,     // v32: was 2; just need basic trend alignment
     requireConfluence:false, // skip G3 confluence gate
   },
 };
@@ -5375,6 +5469,7 @@ function resolveOutcomes() {
           break;
         }
         if (i - sig.idx >= CFG.ENTRY_EXPIRY_CANDLES) {
+          window.SxDeathLog && window.SxDeathLog.logDeath(sig, 'EXPIRED_UNTOUCHED', `Zone never touched in ${i - sig.idx} candles (entry: ${sig.entryMin?.toFixed(2)}–${sig.entryMax?.toFixed(2)})`);
           sig.status = 'EXPIRED';
           sig.exitIdx = i;
           queueExecAlert('EXPIRED', sig);
@@ -5393,71 +5488,115 @@ function resolveOutcomes() {
         let confirmed = false;
         let confirmReason = '';
 
+        // ── v32 TIME-BASED ZONE DEGRADATION ────────────────────────────────────
+        // Instead of hard-killing after N candles, progressively widen the entry
+        // zone so old-but-still-valid signals get a better chance to activate.
+        // Schedule: candles 0–5 = normal zone, 6–10 = +20% wider, 11–15 = +40% wider
+        // Zone is only widened, never narrowed — original zone preserved on sig.
+        const candlesSinceTouched = i - sig.touchedIdx;
+        let _entryMin = sig.entryMin;
+        let _entryMax = sig.entryMax;
+        if (!sig._origEntryMin) { sig._origEntryMin = sig.entryMin; sig._origEntryMax = sig.entryMax; }
+        if (candlesSinceTouched >= 6 && candlesSinceTouched < 11) {
+          const mid   = (sig._origEntryMin + sig._origEntryMax) / 2;
+          const half  = (sig._origEntryMax - sig._origEntryMin) / 2;
+          _entryMin = mid - half * 1.20;
+          _entryMax = mid + half * 1.20;
+          sig.entryMin = _entryMin; sig.entryMax = _entryMax; // update for UI
+          if (!sig._degraded6) { sig._degraded6 = true; SX_DEBUG.log(`[DEGRADE] ${sig.symbol} zone widened +20% at candle ${candlesSinceTouched}`); }
+        } else if (candlesSinceTouched >= 11) {
+          const mid   = (sig._origEntryMin + sig._origEntryMax) / 2;
+          const half  = (sig._origEntryMax - sig._origEntryMin) / 2;
+          _entryMin = mid - half * 1.40;
+          _entryMax = mid + half * 1.40;
+          sig.entryMin = _entryMin; sig.entryMax = _entryMax;
+          if (!sig._degraded11) { sig._degraded11 = true; SX_DEBUG.log(`[DEGRADE] ${sig.symbol} zone widened +40% at candle ${candlesSinceTouched}`); }
+        }
+
+        // ── v32 FAST TRACK ACTIVATION ──────────────────────────────────────────
+        // High-confidence signals (score ≥ 75 + BOS or sweep already detected)
+        // don't need to wait for a candle CLOSE inside the zone.
+        // The touch candle itself is the confirmation — enter immediately.
+        // Guard: only when price is genuinely inside the zone at this moment.
+        // v33: relaxed fast track — score 55+, no BOS/sweep needed
+        const isFastTrackEligible = (
+          sig.score >= 55 &&
+          sig.volRatio >= 0.4
+        );
+        if (isFastTrackEligible && i === sig.touchedIdx) {
+          const inZone = c.l <= _entryMax && c.h >= _entryMin;
+          const directional = sig.direction === 'LONG' ? c.c >= c.o : c.c <= c.o;
+          if (inZone && directional) {
+            confirmed = true;
+            confirmReason = 'FAST_TRACK';
+            SX_DEBUG.log(`[FAST_TRACK] ${sig.symbol} ${sig.direction} score=${sig.score} activated immediately`);
+          }
+        }
+
+        if (!confirmed) {
         // v20: CONFIRMED entries (BOS + retest) activate fast on any directional candle in zone
         if (sig.entryType === 'CONFIRMED') {
-          if (c.c >= sig.entryMin && c.c <= sig.entryMax) {
+          if (c.c >= _entryMin && c.c <= _entryMax) {
             const directional = sig.direction === 'LONG' ? c.c > c.o : c.c < c.o;
             if (directional) { confirmed = true; confirmReason = 'RETEST_HOLD'; }
-            else if (i - sig.touchedIdx >= 1) { confirmed = true; confirmReason = 'RETEST_WAIT'; }
+            else if (candlesSinceTouched >= 1) { confirmed = true; confirmReason = 'RETEST_WAIT'; }
           }
         }
         // v20: AGGRESSIVE entries (BOS without retest) activate immediately on touch
         else if (sig.entryType === 'AGGRESSIVE') {
-          // As soon as price is inside the zone with a directional candle, we're in
           const directional = sig.direction === 'LONG' ? c.c >= c.o : c.c <= c.o;
-          if (c.c >= sig.entryMin && c.c <= sig.entryMax && directional) {
+          if (c.c >= _entryMin && c.c <= _entryMax && directional) {
             confirmed = true; confirmReason = 'AGGRESSIVE_TOUCH';
           }
-          // Fallback: after 1 candle inside zone, accept regardless
-          else if (c.c >= sig.entryMin && c.c <= sig.entryMax && i - sig.touchedIdx >= 1) {
+          else if (c.c >= _entryMin && c.c <= _entryMax && candlesSinceTouched >= 1) {
             confirmed = true; confirmReason = 'AGGRESSIVE_HOLD';
           }
         }
         // v20: SWEEP entries (liquidity reversal) need the candle to close back in direction
         else if (sig.entryType === 'SWEEP') {
           const directional = sig.direction === 'LONG' ? c.c > c.o : c.c < c.o;
-          if (directional && c.c >= sig.entryMin && c.c <= sig.entryMax) {
+          if (directional && c.c >= _entryMin && c.c <= _entryMax) {
             confirmed = true; confirmReason = 'SWEEP_REVERSAL';
           }
         }
         else if (sig.entryType === 'PULLBACK') {
-          // PULLBACK confirmation: candle CLOSED inside the entry zone
-          if (c.c >= sig.entryMin && c.c <= sig.entryMax) {
-            // Additional check: candle should be in trade direction (bullish for LONG, bearish for SHORT)
+          if (c.c >= _entryMin && c.c <= _entryMax) {
             const directional = sig.direction === 'LONG' ? c.c > c.o : c.c < c.o;
             if (directional) { confirmed = true; confirmReason = 'PULLBACK_CLOSE'; }
-            // Weaker fallback: close-inside-zone alone (accept after 1 more candle)
-            else if (i - sig.touchedIdx >= 1) { confirmed = true; confirmReason = 'PULLBACK_HOLD'; }
+            else if (candlesSinceTouched >= 1) { confirmed = true; confirmReason = 'PULLBACK_HOLD'; }
           }
         } else if (sig.entryType === 'BREAKOUT') {
-          // BREAKOUT confirmation: price must break BEYOND zone in trade direction
-          // AND then RETEST back into zone (for stronger entry)
           if (sig.direction === 'LONG') {
-            // If price broke above entryMax (breakout confirmed)
-            if (c.h > sig.entryMax && c.c > sig.entryMax) {
-              // Mark breakout occurred
-              if (!sig.breakoutIdx) sig.breakoutIdx = i;
-              // Check retest: subsequent candle came back to zone and closed bullish above
-              if (sig.breakoutIdx && i > sig.breakoutIdx) {
-                const retested = c.l <= sig.entryMax && c.c > sig.entryMin && c.c > c.o;
-                if (retested) { confirmed = true; confirmReason = 'BREAKOUT_RETEST'; }
-              }
-              // Fast-path: strong breakout candle without retest (if broke and held for 2 candles)
-              if (!confirmed && i - sig.breakoutIdx >= 2) {
-                confirmed = true; confirmReason = 'BREAKOUT_HOLD';
-              }
-            }
-          } else { // SHORT
-            if (c.l < sig.entryMin && c.c < sig.entryMin) {
+            if (c.h > _entryMax && c.c > _entryMax) {
               if (!sig.breakoutIdx) sig.breakoutIdx = i;
               if (sig.breakoutIdx && i > sig.breakoutIdx) {
-                const retested = c.h >= sig.entryMin && c.c < sig.entryMax && c.c < c.o;
+                const retested = c.l <= _entryMax && c.c > _entryMin && c.c > c.o;
                 if (retested) { confirmed = true; confirmReason = 'BREAKOUT_RETEST'; }
               }
               if (!confirmed && i - sig.breakoutIdx >= 2) {
                 confirmed = true; confirmReason = 'BREAKOUT_HOLD';
               }
             }
+          } else {
+            if (c.l < _entryMin && c.c < _entryMin) {
+              if (!sig.breakoutIdx) sig.breakoutIdx = i;
+              if (sig.breakoutIdx && i > sig.breakoutIdx) {
+                const retested = c.h >= _entryMin && c.c < _entryMax && c.c < c.o;
+                if (retested) { confirmed = true; confirmReason = 'BREAKOUT_RETEST'; }
+              }
+              if (!confirmed && i - sig.breakoutIdx >= 2) {
+                confirmed = true; confirmReason = 'BREAKOUT_HOLD';
+              }
+            }
+          }
+        }
+        } // end !confirmed (normal path)
+
+        // v33: FALLBACK — if touched 3+ candles and price in zone, just activate
+        if (!confirmed && candlesSinceTouched >= 3) {
+          if (c.c >= _entryMin && c.c <= _entryMax) {
+            confirmed = true;
+            confirmReason = 'FALLBACK_HOLD';
           }
         }
 
@@ -5465,14 +5604,19 @@ function resolveOutcomes() {
           sig.status = 'ACTIVE';
           sig.activatedIdx = i;
           sig.confirmReason = confirmReason;
-          // Fill at this candle's close (the confirmation candle)
           sig.activatedPrice = c.c;
           queueExecAlert('ACTIVATED', sig);
+          window.SxDeathLog && window.SxDeathLog.logActivated(sig, confirmReason);
           changed = true;
           break;
         }
-        // Expire if no confirmation for ENTRY_EXPIRY_CANDLES from signal
-        if (i - sig.idx >= CFG.ENTRY_EXPIRY_CANDLES) {
+        // ── v32 SOFT EXPIRY: log death reason before expiring ──────────────────
+        // Extended from hard 15-candle kill to 20 candles (degradation buys 5 extra)
+        if (i - sig.idx >= (CFG.ENTRY_EXPIRY_CANDLES + 5)) {
+          const deathReason = sig.touchedIdx
+            ? `TOUCHED but unconfirmed after ${i - sig.touchedIdx} candles (entryType: ${sig.entryType})`
+            : `Zone never touched after ${i - sig.idx} candles`;
+          window.SxDeathLog && window.SxDeathLog.logDeath(sig, 'EXPIRED_UNCONFIRMED', deathReason);
           sig.status = 'EXPIRED';
           sig.exitIdx = i;
           queueExecAlert('EXPIRED', sig);
@@ -5564,6 +5708,46 @@ function resolveOutcomes() {
   }
   return changed;
 }
+
+/**
+ * v33: AUTO-ACTIVATE RECENT SIGNALS
+ * When switching coins, rescue signals from the last 15 candles.
+ * If current price is near the entry zone, activate immediately.
+ */
+function autoActivateRecent() {
+  if (!S.candles.length || !S.sigs.length) return;
+  var n = S.candles.length - 1;
+  var livePrice = S.candles[n].c;
+  var activated = 0;
+
+  for (var si = 0; si < S.sigs.length; si++) {
+    var sig = S.sigs[si];
+    if (sig.status !== 'WAITING' && sig.status !== 'TOUCHED') continue;
+    if (n - sig.idx > 20) continue;
+
+    var zoneWidth = ((sig.entryMax || 0) - (sig.entryMin || 0)) || (livePrice * 0.005);
+    var zoneMid = ((sig.entryMax || 0) + (sig.entryMin || 0)) / 2;
+    var dist = Math.abs(livePrice - zoneMid);
+
+    if (dist <= zoneWidth * 2.0) {
+      sig.status = 'ACTIVE';
+      sig.activatedIdx = n;
+      sig.activatedPrice = livePrice;
+      sig.confirmReason = 'AUTO_RECENT';
+      sig.touchedIdx = sig.touchedIdx || n;
+      sig.touchedPrice = sig.touchedPrice || livePrice;
+      activated++;
+      try { queueExecAlert('ACTIVATED', sig); } catch(e) {}
+      console.log('[v33 AUTO] ' + (sig.symbol||S.sym) + ' ' + sig.direction + ' score=' + sig.score + ' auto-activated');
+    }
+  }
+
+  if (activated > 0) {
+    console.log('[v33 AUTO] ' + activated + ' signal(s) auto-activated for ' + S.sym);
+    try { updateLiveFeedCards(); } catch(e) {}
+  }
+}
+window.autoActivateRecent = autoActivateRecent;
 
 /**
  * Finalize trade outcome. For partial-closed trades, blend the 50%-at-2R profit
@@ -5967,13 +6151,21 @@ function _doRenderLiveFeed() {
         : '';
 
       html += `<div class="af-card ${dirCls} state-${cardState}${glowCls}" data-sigidx="${sig.idx}">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <div style="display:flex;align-items:center;gap:4px">
-            <span class="af-sym">${sym}</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+          <div style="display:flex;align-items:center;gap:5px">
+            <span class="af-sym" style="font-family:var(--sans)">${sym}</span>
             ${tierBadge(tier)}
           </div>
-          <div style="display:flex;align-items:center;gap:4px">
+          <div style="display:flex;align-items:center;gap:5px">
             <span class="af-dir ${isLong?'long':'short'}">${isLong?'▲':'▼'} ${isLong?'LONG':'SHORT'}</span>
+            <div style="display:flex;flex-direction:column;align-items:center;width:32px;height:32px;position:relative;flex-shrink:0">
+              <svg width="32" height="32" viewBox="0 0 32 32" style="transform:rotate(-90deg)">
+                <circle cx="16" cy="16" r="13" stroke="var(--brd2)" stroke-width="3" fill="none"/>
+                <circle cx="16" cy="16" r="13" stroke="${isLong?'var(--g)':'var(--r)'}" stroke-width="3" fill="none"
+                  stroke-dasharray="${((sig.score||0)/100)*(2*Math.PI*13)} ${2*Math.PI*13}" stroke-linecap="round"/>
+              </svg>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:8px;font-weight:700;color:${isLong?'var(--g)':'var(--r)'};font-family:var(--font)">${sig.score||0}</div>
+            </div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;font-size:7px;color:var(--t3);margin-bottom:4px">
@@ -7266,6 +7458,8 @@ async function init(sym, tf) {
     S.ind = computeAll(S.candles);
     S.sigs = runEngine(S.candles, S.ind);
     resolveOutcomes();
+    // v33: auto-activate recent signals so user sees trades immediately
+    if (typeof autoActivateRecent === 'function') autoActivateRecent();
     S.vStart = Math.max(0, S.candles.length - 100);
     S.vCount = 100;
     S.isLoading = false;
@@ -7569,12 +7763,40 @@ function fullUIUpdate() {
     const buy=ls.dir==='BUY',c=buy?'var(--g)':'var(--r)',sc=ls.score>=85;
     const displayDir = ls.direction || (buy ? 'LONG' : 'SHORT');
     const t5 = ls.tier || getSignalTier(ls.score, ls.qScore);
-    const tierHtml = t5 === 'ELITE'
+    const tierHtml = t5 === 'SNIPER'
+      ? `<span class="tier-sniper" style="margin-left:6px">⚡ SNIPER</span>`
+      : t5 === 'ELITE'
       ? `<span class="tier-elite" style="margin-left:6px">★ ELITE</span>`
       : t5 === 'STRONG'
       ? `<span class="tier-strong" style="margin-left:6px">◈ STRONG</span>`
       : `<span class="tier-normal" style="margin-left:6px">● NORMAL</span>`;
-    if(sdEl)sdEl.innerHTML=`<span style="color:${c}">${buy?'▲':'▼'} ${displayDir}</span><span class="bdg" style="color:${sc?'var(--g)':'var(--am)'};border-color:${sc?'rgba(0,200,150,.2)':'rgba(245,158,11,.2)'};background:${sc?'rgba(0,200,150,.07)':'rgba(245,158,11,.07)'}">${ls.label.toUpperCase()}</span>${tierHtml}`;
+    // v34: render score ring SVG
+    const ringR=26,ringCx=30,ringCy=30,ringCirc=2*Math.PI*ringR;
+    const ringFill=(ls.score/100)*ringCirc;
+    const ringColor=ls.score>=85?'var(--g)':ls.score>=75?'var(--te)':'var(--am)';
+    if(sdEl)sdEl.innerHTML=
+      `<div style="display:flex;align-items:center;gap:10px">
+        <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;flex-shrink:0">
+          <svg width="60" height="60" viewBox="0 0 60 60" style="transform:rotate(-90deg)">
+            <circle cx="${ringCx}" cy="${ringCy}" r="${ringR}" stroke="var(--brd2)" stroke-width="4" fill="none"/>
+            <circle cx="${ringCx}" cy="${ringCy}" r="${ringR}" stroke="${ringColor}" stroke-width="4" fill="none"
+              stroke-dasharray="${ringFill} ${ringCirc}" stroke-linecap="round"
+              style="filter:drop-shadow(0 0 3px ${ringColor}40)"/>
+          </svg>
+          <div style="position:absolute;text-align:center;line-height:1">
+            <div style="font-size:13px;font-weight:700;color:${ringColor};font-family:var(--font)">${ls.score}</div>
+            <div style="font-size:5px;color:var(--t3);letter-spacing:1px">SCORE</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:${c};font-family:var(--sans);letter-spacing:-.5px">${buy?'▲':'▼'} ${displayDir}</div>
+          <div style="display:flex;gap:4px;margin-top:4px;align-items:center">
+            <span class="bdg" style="color:${sc?'var(--g)':'var(--am)'};border-color:${sc?'rgba(0,200,150,.2)':'rgba(245,158,11,.2)'};background:${sc?'rgba(0,200,150,.07)':'rgba(245,158,11,.07)'}">${ls.label.toUpperCase()}</span>
+            ${tierHtml}
+            <span style="font-size:7px;color:var(--t3)">Q${ls.qScore||0}/4</span>
+          </div>
+        </div>
+      </div>`;
     if(scw){scw.style.display='block';document.getElementById('scval').textContent=ls.score+'/100';document.getElementById('scval').style.color=sc?'var(--g)':'var(--am)';const sb=document.getElementById('scbar');sb.style.width=ls.score+'%';sb.style.background=sc?'var(--g)':'var(--am)';}
     const sk=document.getElementById('sckrow');
     if(sk){
@@ -7772,8 +7994,35 @@ function fullUIUpdate() {
   updateLiveFeedCards();
 }
 
-// ═══════════════════════════════════════════════════════════
-// SECTION 11b — TRADE LEDGER PANEL
+// ── v34: Inject font improvements to scan results ──────────────────────────
+function scanRowHTML(r, rank) {
+  const buy = r.dir === 'BUY';
+  const c = buy ? 'var(--g)' : 'var(--r)';
+  const bg = buy ? 'rgba(0,200,150,.04)' : 'rgba(240,51,78,.04)';
+  const sc = r.score >= 85;
+  const tier = getSignalTier(r.score, r.qScore || 0);
+  const tierBadgeHtml = tier === 'ELITE'
+    ? `<span class="tier-elite">ELITE</span>`
+    : tier === 'STRONG'
+    ? `<span class="tier-strong">STRONG</span>`
+    : '';
+  return `<div class="scanrow${rank<=3?' top':''}" onclick="switchSym('${r.sym}')">
+    <div class="scanrank">#${rank}</div>
+    <div class="scansym">
+      <div class="nm" style="font-family:var(--sans)">${r.sym.replace('USDT','')}</div>
+      <div class="mt">
+        <span style="color:${c};font-weight:700">${buy?'▲ LONG':'▼ SHORT'}</span>
+        ${tierBadgeHtml}
+        <span>Q${r.qScore||0}/4</span>
+        <span style="color:var(--t3)">${r.tf}</span>
+      </div>
+    </div>
+    <div class="scanscore">
+      <div class="pt" style="color:${sc?'var(--g)':r.score>=70?'var(--te)':'var(--am)'};font-family:var(--font)">${r.score}</div>
+      <div style="font-size:7px;color:var(--t3)">RR ${r.rr?.toFixed(2)||'--'}</div>
+    </div>
+  </div>`;
+}
 // ═══════════════════════════════════════════════════════════
 function updTradeLedger() {
   const closed = S.sigs
@@ -9633,7 +9882,7 @@ function manualAdjustScore(delta) {
     S.ctrl.scoreBase = CFG.SIGNAL_MIN_SCORE; // reset to config base
     S.ctrl.scoreEffective = CFG.SIGNAL_MIN_SCORE;
   } else {
-    S.ctrl.scoreBase = Math.max(70, Math.min(95, S.ctrl.scoreBase + delta));
+    S.ctrl.scoreBase = Math.max(60, Math.min(95, S.ctrl.scoreBase + delta)); // v31: floor 60
     S.ctrl.scoreEffective = S.ctrl.scoreBase;
   }
   updSmartFilterUI();
@@ -9667,7 +9916,7 @@ function applySmartFilter() {
   else if (wr > 65) { mode = 'relaxed'; adj = -1; }
 
   const prev = S.ctrl.scoreEffective;
-  S.ctrl.scoreEffective = Math.max(70, Math.min(97, S.ctrl.scoreBase + adj));
+  S.ctrl.scoreEffective = Math.max(60, Math.min(97, S.ctrl.scoreBase + adj)); // v31: floor 60
   S.ctrl.smartFilterMode = mode;
 
   // Alert if threshold changed
@@ -9864,10 +10113,10 @@ function scanMarket() {
     for (const sig of rawSigs) {
       const score = sig.score || 0;
 
-      // Mode-based filter — v29: STRICT=75, NORMAL=65 (was 85/69)
+      // Mode-based filter — v32: STRICT=75, NORMAL=45 (matched to engine floor)
       let passes = false;
-      if (currentMode === 'STRICT') passes = score >= 75;           // v29: was 85; STRICT gate
-      else passes = score >= 60;                                     // v29: NORMAL uses 60 floor
+      if (currentMode === 'STRICT') passes = score >= 75;
+      else passes = score >= 45;                                     // v32: was 60 — double-filtering with engine
 
       if (!passes) {
         S.autoScoreRejected = (S.autoScoreRejected || 0) + 1;
@@ -12445,7 +12694,7 @@ console.log('[SignalX v9] PRO system initialized ✓ — Firebase + Sound + AI +
       OPT.thresholds = { rsiLongMax: 35, rsiShortMin: 65, volSpikeMin: 1.2, srDistMax: 0.015, pbBodyMin: 0.30, scoreMin: 60 };
       OPT.adjustments = [];
       OPT.insights = {};
-      if (window.S?.ctrl) { window.S.ctrl.scoreBase = 70; window.S.ctrl.scoreEffective = 70; }
+      if (window.S?.ctrl) { window.S.ctrl.scoreBase = 60; window.S.ctrl.scoreEffective = 60; } // v31
       localStorage.removeItem(OPT_LS_KEY);
       renderOptimizerPanel();
       window.showToast?.('⚙ Optimizer thresholds reset to defaults');
@@ -13163,8 +13412,8 @@ console.log('[SignalX v9] PRO system initialized ✓ — Firebase + Sound + AI +
   function updateStats() {
     try {
       const sigs = window.S?.sigs || [];
-      const active  = sigs.filter(s => s.state === 'ACTIVE').length;
-      const waiting = sigs.filter(s => s.state === 'WAITING').length;
+      const active  = sigs.filter(s => ['ACTIVE','BE_MOVED','PARTIAL_TP'].includes(s.status)).length;
+      const waiting = sigs.filter(s => s.status === 'WAITING' || s.status === 'TOUCHED').length;
       const todayR  = window.S?.todayR ?? 0;
       const ae = document.getElementById('v17fp-stat-active');
       const we = document.getElementById('v17fp-stat-wait');
@@ -13185,7 +13434,7 @@ console.log('[SignalX v9] PRO system initialized ✓ — Firebase + Sound + AI +
           updateStats();
           // Push any new signals that haven't been shown yet
           if (window.S?.sigs) {
-            window.S.sigs.slice(0, 5).forEach(sig => {
+            window.S.sigs.filter(s => ['WAITING','TOUCHED','ACTIVE','BE_MOVED','PARTIAL_TP'].includes(s.status)).forEach(sig => {
               if (!sig._v17fp) { sig._v17fp = true; pushSignalCard(sig); }
             });
           }
@@ -13970,11 +14219,11 @@ window.SniperEngine = (function buildSniperEngine(){
 
   // ── Decision constants (the ONLY filter constants in the system) ──────
   // v29: MODE-AWARE thresholds — NORMAL is relaxed, STRICT keeps high accuracy
-  const MIN_SCORE_NORMAL    = 65;   // v29: was 85 global; NORMAL mode relaxed to 65
+  const MIN_SCORE_NORMAL    = 60;   // v31: was 65; synced to CFG.SIGNAL_MIN_SCORE
   const MIN_SCORE_STRICT    = 75;   // v29: was 85; STRICT mode relaxed to 75
   const ELITE_SCORE         = 90;
   const MIN_RR              = 1.5;  // v29: was 2.5; relaxed to 1.5 to match CFG.MIN_RR
-  const MIN_VOL_RATIO       = 1.2;  // v29: was 0.6; raised to user-specified 1.2 for STRICT; NORMAL uses 0.6
+  const MIN_VOL_RATIO       = 0.7;  // v31: was 1.2; synced to CFG.VOL_SPIKE_MIN. NORMAL uses _minVol()=0.30
   const MIN_ATR_RATIO       = 0.25; // v29: was 0.40; relaxed for more signals
   const MIN_EMA_SPREAD      = 0.001; // v29: was 0.003; relaxed for low-spread markets
   const MIN_EMA_SLOPE       = 0.0001; // v29: was 0.00040; relaxed for slow trends
@@ -14102,11 +14351,18 @@ window.SniperEngine = (function buildSniperEngine(){
       return reject(`weak trend (EMA20/50 spread ${data.emaStrength.toFixed(2)}%)`, data);
     }
 
-    // ── HTF alignment — STRICT: h1+h4 must match; NORMAL: h1 sufficient ─
+    // ── HTF alignment — STRICT: h1+h4 must match; NORMAL: h1 mismatch = soft reject only if h4 also mismatches ─
     const isLong = data.direction === 'LONG';
     const wantTrend = isLong ? 'BULL' : 'BEAR';
-    if (data.mtf.h1 !== wantTrend) return reject(`HTF h1=${data.mtf.h1||'?'} ≠ ${wantTrend}`, data);
-    if (isStrict && data.mtf.h4 !== wantTrend) return reject(`HTF h4=${data.mtf.h4||'?'} ≠ ${wantTrend} (STRICT)`, data);
+    if (isStrict) {
+      if (data.mtf.h1 !== wantTrend) return reject(`HTF h1=${data.mtf.h1||'?'} ≠ ${wantTrend}`, data);
+      if (data.mtf.h4 !== wantTrend) return reject(`HTF h4=${data.mtf.h4||'?'} ≠ ${wantTrend} (STRICT)`, data);
+    } else {
+      // NORMAL: require at least h1 OR h4 to agree (not both must mismatch)
+      const h1ok = data.mtf.h1 === wantTrend;
+      const h4ok = data.mtf.h4 === wantTrend;
+      if (!h1ok && !h4ok) return reject(`HTF h1=${data.mtf.h1||'?'} h4=${data.mtf.h4||'?'} both oppose ${wantTrend}`, data);
+    }
 
     // ── S/R proximity ───────────────────────────────────────────────────
     if (!data.srProximity || !data.srProximity.found) {
@@ -14116,10 +14372,12 @@ window.SniperEngine = (function buildSniperEngine(){
     // ── Fakeout filter ──────────────────────────────────────────────────
     if (data.fakeout && data.fakeout.fake) return reject('fake breakout detected', data);
 
-    // ── Confirmation: must have retest OR confirmed pullback ────────────
+    // ── Confirmation: NORMAL mode needs retest OR pullback; STRICT needs both ──
     const hasRetest   = !!(data.retest && data.retest.retested);
     const hasPullback = !!(data.pullback && data.pullback.confirmed);
-    if (!hasRetest && !hasPullback) return reject('no retest/engulfing/rejection', data);
+    const isStrict2   = (window.MODE === 'STRICT');
+    const confirmOk   = isStrict2 ? (hasRetest && hasPullback) : (hasRetest || hasPullback);
+    if (!confirmOk) return reject('no retest/engulfing/rejection', data);
 
     // ── Liquidity: must have BOS or sweep ───────────────────────────────
     const hasBOS   = !!(data.bos   && data.bos.detected);
@@ -15077,6 +15335,366 @@ load();
 let _t=0;function init(){if(++_t>80)return;if(!document.body){setTimeout(init,300);return;}if(!hookPush())setTimeout(hookPush,2000);inject();setInterval(check,3000);console.log("[SAT v6] Active");}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else setTimeout(init,700);
 window.SAT={state:st,render};
+})();
+</script>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// v32 — THREE UPGRADES:
+//   1. FAST TRACK ACTIVATION   — score ≥ 75 + BOS/sweep → instant entry
+//   2. TIME-BASED DEGRADATION  — zone widens +20% → +40% vs hard kill
+//   3. SIGNAL DEATH LOG        — track exactly WHERE and WHY signals die
+// ════════════════════════════════════════════════════════════════════════════
+(function SxDeathLogger() {
+  'use strict';
+
+  const LS_KEY  = 'signalx.deathlog.v1';
+  const MAX_LOG = 200;
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let log = [];
+  let stats = {
+    total:           0,
+    activated:       0,
+    expiredUntouched: 0,
+    expiredUnconfirmed: 0,
+    fastTrack:       0,
+    byDeathReason:   {},
+    byEntryType:     {},
+    bySymbol:        {},
+  };
+
+  // ── Persistence ───────────────────────────────────────────────────────────
+  function save() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ log: log.slice(0, MAX_LOG), stats })); } catch(e) {}
+  }
+  function load() {
+    try {
+      const d = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+      if (d) { log = d.log || []; stats = Object.assign(stats, d.stats || {}); }
+    } catch(e) {}
+  }
+
+  // ── Public API ────────────────────────────────────────────────────────────
+  function logDeath(sig, reason, detail) {
+    const entry = {
+      ts:        Date.now(),
+      symbol:    sig.symbol || '?',
+      direction: sig.direction || '?',
+      score:     sig.score || 0,
+      entryType: sig.entryType || '?',
+      reason,
+      detail,
+      bos:       !!(sig.bos?.detected),
+      sweep:     !!(sig.sweep?.detected),
+      volRatio:  sig.volRatio || 0,
+    };
+    log.unshift(entry);
+    if (log.length > MAX_LOG) log.length = MAX_LOG;
+
+    stats.total++;
+    if (reason === 'EXPIRED_UNTOUCHED')    stats.expiredUntouched++;
+    if (reason === 'EXPIRED_UNCONFIRMED')  stats.expiredUnconfirmed++;
+    stats.byDeathReason[reason] = (stats.byDeathReason[reason] || 0) + 1;
+    stats.byEntryType[entry.entryType] = (stats.byEntryType[entry.entryType] || 0) + 1;
+    stats.bySymbol[entry.symbol] = (stats.bySymbol[entry.symbol] || 0) + 1;
+
+    save();
+    renderHUD();
+    console.log(`%c[DeathLog] ${entry.symbol} ${entry.direction} → ${reason}: ${detail}`, 'color:#f59e0b;font-size:10px');
+  }
+
+  function logActivated(sig, confirmReason) {
+    stats.total++;
+    stats.activated++;
+    if (confirmReason === 'FAST_TRACK') stats.fastTrack++;
+    save();
+    renderHUD();
+  }
+
+  // ── HUD Panel ─────────────────────────────────────────────────────────────
+  function buildHUD() {
+    if (document.getElementById('sx-deathlog-hud')) return;
+    const hud = document.createElement('div');
+    hud.id = 'sx-deathlog-hud';
+    hud.style.cssText = [
+      'position:fixed', 'bottom:10px', 'right:10px', 'z-index:9990',
+      'width:230px', 'background:#030510', 'border:1px solid rgba(245,158,11,.25)',
+      'border-radius:6px', 'font-family:monospace', 'font-size:9px',
+      'color:#7a8a9c', 'box-shadow:0 4px 20px rgba(0,0,0,.6)',
+      'transition:opacity .3s', 'user-select:none',
+    ].join(';');
+
+    hud.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer" id="sx-dl-hdr">
+        <span style="font-size:7px;letter-spacing:2px;color:#f59e0b;font-weight:700">⚗ SIGNAL DEATH LOG</span>
+        <span id="sx-dl-toggle" style="font-size:8px;color:#374555;cursor:pointer">▼</span>
+      </div>
+      <div id="sx-dl-body" style="padding:8px 10px">
+        <div id="sx-dl-stats"></div>
+        <div style="font-size:6px;letter-spacing:1.5px;color:#374555;margin:7px 0 4px">RECENT DEATHS</div>
+        <div id="sx-dl-recent" style="max-height:120px;overflow-y:auto"></div>
+        <div style="margin-top:6px;padding-top:5px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:5px">
+          <button onclick="window.SxDeathLog.clear()" style="flex:1;background:transparent;border:1px solid rgba(240,51,78,.3);color:#f0334e;font-size:7px;font-family:monospace;padding:3px;border-radius:3px;cursor:pointer;letter-spacing:1px">CLEAR LOG</button>
+          <button onclick="window.SxDeathLog.dump()" style="flex:1;background:transparent;border:1px solid rgba(245,158,11,.3);color:#f59e0b;font-size:7px;font-family:monospace;padding:3px;border-radius:3px;cursor:pointer;letter-spacing:1px">DUMP JSON</button>
+        </div>
+      </div>`;
+    document.body.appendChild(hud);
+
+    // Collapse toggle
+    let collapsed = false;
+    document.getElementById('sx-dl-hdr').onclick = () => {
+      collapsed = !collapsed;
+      document.getElementById('sx-dl-body').style.display = collapsed ? 'none' : 'block';
+      document.getElementById('sx-dl-toggle').textContent = collapsed ? '▶' : '▼';
+    };
+  }
+
+  function renderHUD() {
+    if (!document.getElementById('sx-deathlog-hud')) buildHUD();
+
+    // Stats panel
+    const total     = stats.total || 0;
+    const activated = stats.activated || 0;
+    const died      = total - activated;
+    const actRate   = total > 0 ? (activated / total * 100).toFixed(0) : '—';
+    const ftCount   = stats.fastTrack || 0;
+    const col       = activated / Math.max(total, 1) >= 0.3 ? '#00c896' : '#f59e0b';
+
+    document.getElementById('sx-dl-stats').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:6px">
+        <div style="text-align:center;padding:4px 2px;background:rgba(0,200,150,.05);border:0.5px solid rgba(0,200,150,.12);border-radius:3px">
+          <div style="color:${col};font-size:10px;font-weight:700">${activated}</div>
+          <div style="color:#374555;font-size:6px;letter-spacing:1px;margin-top:1px">ACTIVE</div>
+        </div>
+        <div style="text-align:center;padding:4px 2px;background:rgba(240,51,78,.05);border:0.5px solid rgba(240,51,78,.12);border-radius:3px">
+          <div style="color:#f0334e;font-size:10px;font-weight:700">${died}</div>
+          <div style="color:#374555;font-size:6px;letter-spacing:1px;margin-top:1px">DIED</div>
+        </div>
+        <div style="text-align:center;padding:4px 2px;background:rgba(245,158,11,.05);border:0.5px solid rgba(245,158,11,.12);border-radius:3px">
+          <div style="color:#f59e0b;font-size:10px;font-weight:700">${ftCount}</div>
+          <div style="color:#374555;font-size:6px;letter-spacing:1px;margin-top:1px">FAST ⚡</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+        <span style="color:#374555">Activation rate</span>
+        <span style="color:${col};font-weight:700">${actRate}%</span>
+      </div>
+      <div style="height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;margin-bottom:5px">
+        <div style="height:100%;width:${actRate === '—' ? 0 : actRate}%;background:${col};transition:width .5s"></div>
+      </div>
+      ${Object.keys(stats.byDeathReason).length ? `
+      <div style="font-size:6px;letter-spacing:1.5px;color:#374555;margin-bottom:3px">DEATH BREAKDOWN</div>
+      ${Object.entries(stats.byDeathReason).map(([r, n]) =>
+        `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:7px">
+           <span style="color:#f0334e">${r.replace('EXPIRED_', '').replace('_', ' ')}</span>
+           <span style="color:#374555">${n}</span>
+         </div>`
+      ).join('')}` : ''}`;
+
+    // Recent deaths list
+    const recent = log.slice(0, 8);
+    document.getElementById('sx-dl-recent').innerHTML = recent.length
+      ? recent.map(e => {
+          const ago    = Math.round((Date.now() - e.ts) / 60000);
+          const agoStr = ago < 60 ? `${ago}m` : `${Math.round(ago/60)}h`;
+          const rCol   = e.reason === 'EXPIRED_UNTOUCHED' ? '#f59e0b' : '#f0334e';
+          const dirCol = e.direction === 'LONG' ? '#00c896' : '#f0334e';
+          return `<div style="display:flex;align-items:center;gap:4px;padding:3px 0;border-bottom:0.5px solid rgba(255,255,255,.04)">
+            <span style="color:${dirCol};font-size:8px;font-weight:700;width:28px">${e.symbol.replace('USDT','')}</span>
+            <span style="color:${dirCol};font-size:6px;width:28px">${e.direction}</span>
+            <span style="color:${rCol};font-size:6px;flex:1">${e.reason.replace('EXPIRED_','').replace('_',' ')}</span>
+            <span style="color:#374555;font-size:6px">${agoStr}</span>
+          </div>`;
+        }).join('')
+      : '<div style="color:#374555;font-size:7px;padding:4px 0">No deaths logged yet</div>';
+  }
+
+  // ── Utilities ──────────────────────────────────────────────────────────────
+  function clear() {
+    log = []; stats = { total:0, activated:0, expiredUntouched:0, expiredUnconfirmed:0, fastTrack:0, byDeathReason:{}, byEntryType:{}, bySymbol:{} };
+    save(); renderHUD();
+    console.log('[DeathLog] Cleared');
+  }
+  function dump() {
+    const blob = new Blob([JSON.stringify({ log, stats }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `signalx-deathlog-${new Date().toISOString().slice(0,10)}.json`; a.click();
+  }
+  function getStats()  { return stats; }
+  function getLog()    { return log; }
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+  load();
+  function boot() {
+    if (!document.body) { setTimeout(boot, 300); return; }
+    buildHUD(); renderHUD();
+    setInterval(renderHUD, 10000); // refresh every 10s to update "X min ago"
+    console.log('%c[SxDeathLog v32] Signal Death Logger active — window.SxDeathLog', 'color:#f59e0b;font-weight:700');
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else setTimeout(boot, 800);
+
+  window.SxDeathLog = { logDeath, logActivated, clear, dump, getStats, getLog };
+})();
+</script>
+
+<!-- v33: ACTIVE TRADES NOW — always-visible dashboard HUD -->
+<script>
+(function ActiveTradesHUD() {
+  function build() {
+    if (document.getElementById('sx-athud')) return;
+    var hud = document.createElement('div');
+    hud.id = 'sx-athud';
+    hud.style.cssText = 'position:fixed;bottom:10px;left:10px;z-index:9991;width:280px;max-height:360px;background:#060a15;border:1px solid rgba(0,200,150,.3);border-radius:6px;font-family:monospace;font-size:9px;color:#7a8a9c;box-shadow:0 4px 24px rgba(0,0,0,.7);overflow:hidden;user-select:none';
+    hud.innerHTML = '<div id="sx-ath-hdr" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid rgba(0,200,150,.15);cursor:pointer;background:rgba(0,200,150,.04)">' +
+      '<div style="display:flex;align-items:center;gap:5px">' +
+      '<span id="sx-ath-dot" style="width:7px;height:7px;border-radius:50%;background:#00c896;display:inline-block"></span>' +
+      '<span style="font-size:8px;letter-spacing:2px;color:#00c896;font-weight:700">ACTIVE TRADES</span>' +
+      '</div>' +
+      '<span id="sx-ath-cnt" style="font-size:9px;font-weight:700;background:rgba(0,200,150,.15);padding:1px 8px;border-radius:8px;color:#00c896">0</span>' +
+      '</div>' +
+      '<div id="sx-ath-body" style="overflow-y:auto;max-height:300px;scrollbar-width:thin;scrollbar-color:#0d101e #060a15"></div>';
+    document.body.appendChild(hud);
+
+    var collapsed = false;
+    document.getElementById('sx-ath-hdr').onclick = function() {
+      collapsed = !collapsed;
+      document.getElementById('sx-ath-body').style.display = collapsed ? 'none' : 'block';
+    };
+  }
+
+  function render() {
+    if (!document.getElementById('sx-athud')) build();
+    var body = document.getElementById('sx-ath-body');
+    var cntEl = document.getElementById('sx-ath-cnt');
+    var dotEl = document.getElementById('sx-ath-dot');
+    if (!body || !window.S) return;
+
+    var sigs = window.S.sigs || [];
+    var activeSigs = sigs.filter(function(s) { return ['ACTIVE','BE_MOVED','PARTIAL_TP'].indexOf(s.status) >= 0; });
+    var waitingSigs = sigs.filter(function(s) { return s.status === 'WAITING' || s.status === 'TOUCHED'; });
+    var wins = sigs.filter(function(s) { return s.status === 'WIN'; }).length;
+    var losses = sigs.filter(function(s) { return s.status === 'LOSS'; }).length;
+    var totalLive = activeSigs.length + waitingSigs.length;
+    var liveP = (window.S.candles && window.S.candles.length) ? window.S.candles[window.S.candles.length - 1].c : null;
+
+    if (cntEl) cntEl.textContent = totalLive;
+
+    // Pulse the dot
+    if (dotEl) {
+      dotEl.style.background = activeSigs.length > 0 ? '#00c896' : waitingSigs.length > 0 ? '#f59e0b' : '#374555';
+      dotEl.style.animation = totalLive > 0 ? 'rtPulse 1s ease-in-out infinite' : 'none';
+    }
+
+    var html = '';
+
+    // STATUS BAR - always visible
+    var sym = (window.S.sym || 'BTCUSDT').replace('USDT','');
+    var connected = window.S.isConnected ? 'LIVE' : 'OFFLINE';
+    var connCol = window.S.isConnected ? '#00c896' : '#f0334e';
+    var mode = (typeof MODE !== 'undefined') ? MODE : 'NORMAL';
+    var totalSigs = sigs.length;
+    var diag = window.S._lastDiag;
+    var diagStr = diag ? (diag.accepted + '/' + diag.total) : '--';
+
+    html += '<div style="padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.05);display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;text-align:center">';
+    html += '<div><div style="font-size:6px;color:#374555;letter-spacing:1px">STATUS</div><div style="font-size:9px;font-weight:700;color:' + connCol + '">' + connected + '</div></div>';
+    html += '<div><div style="font-size:6px;color:#374555;letter-spacing:1px">COIN</div><div style="font-size:9px;font-weight:700;color:#dde5f0">' + sym + '</div></div>';
+    html += '<div><div style="font-size:6px;color:#374555;letter-spacing:1px">SIGNALS</div><div style="font-size:9px;font-weight:700;color:#22d3ee">' + totalSigs + '</div></div>';
+    html += '<div><div style="font-size:6px;color:#374555;letter-spacing:1px">ENGINE</div><div style="font-size:9px;font-weight:700;color:#f59e0b">' + diagStr + '</div></div>';
+    html += '</div>';
+
+    // WIN/LOSS strip
+    html += '<div style="padding:4px 10px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;gap:10px;justify-content:center">';
+    html += '<span style="font-size:7px">W: <b style="color:#00c896">' + wins + '</b></span>';
+    html += '<span style="font-size:7px">L: <b style="color:#f0334e">' + losses + '</b></span>';
+    html += '<span style="font-size:7px">Active: <b style="color:#00c896">' + activeSigs.length + '</b></span>';
+    html += '<span style="font-size:7px">Wait: <b style="color:#f59e0b">' + waitingSigs.length + '</b></span>';
+    html += '</div>';
+
+    // ACTIVE TRADES
+    if (activeSigs.length > 0) {
+      html += '<div style="padding:4px 10px;font-size:6px;letter-spacing:2px;color:#00c896;border-bottom:1px solid rgba(0,200,150,.1);background:rgba(0,200,150,.03)">LIVE TRADES (' + activeSigs.length + ')</div>';
+      for (var i = 0; i < activeSigs.length; i++) {
+        var sig = activeSigs[i];
+        var sSym = (sig.symbol || window.S.sym || '').replace('USDT','');
+        var isLong = sig.direction === 'LONG';
+        var dirCol = isLong ? '#00c896' : '#f0334e';
+        var dirTxt = isLong ? 'LONG' : 'SHORT';
+        var pnl = '--';
+        var pnlCol = '#374555';
+        if (liveP && sig.activatedPrice) {
+          var R = Math.abs(sig.activatedPrice - (sig.slOriginal || sig.sl)) || 1;
+          var cR = isLong ? (liveP - sig.activatedPrice) / R : (sig.activatedPrice - liveP) / R;
+          pnl = (cR >= 0 ? '+' : '') + cR.toFixed(2) + 'R';
+          pnlCol = cR >= 0 ? '#00c896' : '#f0334e';
+        }
+        html += '<div style="padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;background:' + (isLong ? 'rgba(0,200,150,.03)' : 'rgba(240,51,78,.03)') + '">';
+        html += '<div style="flex:1">';
+        html += '<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">';
+        html += '<span style="color:' + dirCol + ';font-weight:700;font-size:10px">' + sSym + '</span>';
+        html += '<span style="color:' + dirCol + ';font-size:7px;background:' + dirCol + '15;padding:0 4px;border-radius:2px">' + dirTxt + '</span>';
+        html += '<span style="font-size:7px;color:#374555;margin-left:auto">Score ' + sig.score + '</span>';
+        html += '</div>';
+        html += '<div style="display:flex;gap:8px;font-size:7px;color:#4a5568">';
+        html += '<span>E: <b style="color:#dde5f0">' + (sig.activatedPrice || sig.entry || 0).toFixed(2) + '</b></span>';
+        html += '<span>SL: <b style="color:#f0334e">' + (sig.sl || 0).toFixed(2) + '</b></span>';
+        html += '<span>TP: <b style="color:#00c896">' + (sig.tp || 0).toFixed(2) + '</b></span>';
+        html += '</div></div>';
+        html += '<div style="text-align:right;min-width:48px">';
+        html += '<div style="color:' + pnlCol + ';font-size:13px;font-weight:700">' + pnl + '</div>';
+        html += '<div style="font-size:5px;color:#4a5568;letter-spacing:1px">' + sig.status + '</div>';
+        html += '</div></div>';
+      }
+    }
+
+    // WAITING
+    if (waitingSigs.length > 0) {
+      html += '<div style="padding:4px 10px;font-size:6px;letter-spacing:2px;color:#f59e0b;border-bottom:1px solid rgba(245,158,11,.1);background:rgba(245,158,11,.03)">PENDING (' + waitingSigs.length + ')</div>';
+      for (var j = 0; j < Math.min(waitingSigs.length, 6); j++) {
+        var ws = waitingSigs[j];
+        var wSym = (ws.symbol || window.S.sym || '').replace('USDT','');
+        var wLong = ws.direction === 'LONG';
+        var wCol = wLong ? '#00c896' : '#f0334e';
+        html += '<div style="padding:4px 10px;border-bottom:1px solid rgba(255,255,255,.03);display:flex;align-items:center;gap:4px;opacity:.75">';
+        html += '<span style="color:' + wCol + ';font-size:8px;font-weight:700;width:30px">' + wSym + '</span>';
+        html += '<span style="color:' + wCol + ';font-size:7px;width:38px">' + (wLong ? 'LONG' : 'SHORT') + '</span>';
+        html += '<span style="font-size:7px;color:#4a5568;flex:1">Zone: ' + (ws.entryMin || 0).toFixed(1) + '-' + (ws.entryMax || 0).toFixed(1) + '</span>';
+        html += '<span style="font-size:7px;color:#f59e0b">' + ws.status + '</span>';
+        html += '</div>';
+      }
+    }
+
+    // EMPTY STATE
+    if (totalLive === 0) {
+      html += '<div style="padding:14px 10px;text-align:center">';
+      html += '<div style="color:#f59e0b;font-size:9px;margin-bottom:6px">No active trades</div>';
+      html += '<div style="color:#374555;font-size:7px;line-height:1.6">';
+      html += 'Total signals generated: ' + totalSigs + '<br>';
+      html += 'Engine passed: ' + diagStr + '<br>';
+      html += 'Mode: ' + mode + ' · Scanning every 3s</div>';
+      html += '</div>';
+    }
+
+    // LAST UPDATED timestamp
+    html += '<div style="padding:3px 10px;text-align:right;font-size:6px;color:#232d3a;border-top:1px solid rgba(255,255,255,.03)">';
+    html += 'Updated: ' + new Date().toLocaleTimeString() + ' · v33';
+    html += '</div>';
+
+    body.innerHTML = html;
+  }
+
+  function boot() {
+    if (!document.body) { setTimeout(boot, 300); return; }
+    build();
+    render();
+    setInterval(render, 2000);
+    console.log('[v33] Active Trades HUD started');
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else setTimeout(boot, 1000);
 })();
 </script>
 </body>
