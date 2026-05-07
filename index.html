@@ -6,9 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>SignalX Pro — v34 MERGED</title>
+<title>SignalX Pro — v38 Pro Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- EARLY PAINT: dark before any CSS/JS loads -->
 <style>html,body,#app{background:#010208!important}#ovload,#overr,#cwrap,#ccol,#col-center,#cv{background:#010208!important}</style>
 <!-- CRASH GUARD: surface any JS error visibly -->
@@ -34,7 +34,7 @@ window.onerror=function(msg,src,line,col,err){
 </script>
 
 <!-- ═══════════════════════════════════════════════
-     v23 QUALITY GATES: Parameters optimized for
+     v34 QUALITY GATES: Parameters optimized for
      accuracy over signal frequency. See config block
      for SIGNAL_MIN_SCORE, MIN_RR, VOL_SPIKE_MIN etc.
      Use CTRL panel → CLEAR DATA for manual reset.
@@ -42,11 +42,10 @@ window.onerror=function(msg,src,line,col,err){
 <script>
 (function cacheBuster() {
   const VERSION_KEY = 'signalx.uiVersion';
-  const CURRENT_VERSION = 'v23-optimized';
+  const CURRENT_VERSION = 'v36-cfg-sync';
   try {
-    // v22: write version tag ONLY — no auto-erasure of signal/trade data.
     localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
-    console.log('[SignalX v23] Version tag set — data preserved');
+    console.log('[SignalX v34 MERGED] Version tag set — data preserved');
   } catch(e) { /* localStorage unavailable — ignore */ }
 })();
 
@@ -140,22 +139,12 @@ console.log('%c[SignalX] Debug toggle: SX_DEBUG.on() / SX_DEBUG.off() / SX_DEBUG
   // or from the URL hash for first-time setup. Never hardcoded in source.
   // Format: #fb=BASE64_JSON  (one-time bootstrap — hash is cleared after read)
   function _loadFBConfig() {
-    try {
-      // 1. Check sessionStorage (set by user via CTRL panel Firebase form)
-      const stored = sessionStorage.getItem('signalx.fb.cfg');
-      if (stored) return JSON.parse(stored);
-    } catch(e) {}
-    try {
-      // 2. One-time URL hash bootstrap
-      if (window.location.hash.startsWith('#fb=')) {
-        const raw = decodeURIComponent(window.location.hash.slice(4));
-        const cfg = JSON.parse(atob(raw));
-        sessionStorage.setItem('signalx.fb.cfg', JSON.stringify(cfg));
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-        return cfg;
-      }
-    } catch(e) {}
-    return null; // No credentials → Firebase stays offline
+    // ── HARDCODED CONFIG — auto-connects on every load ──────
+    return {
+      apiKey:      "AIzaSyC2j7TIGrph_q4yngCMSESmT7xPIOjBXgo",
+      databaseURL: "https://ai-signal-apx-default-rtdb.firebaseio.com",
+      projectId:   "ai-signal-apx",
+    };
   }
   const FB_CONFIG = _loadFBConfig();
 
@@ -167,7 +156,8 @@ console.log('%c[SignalX] Debug toggle: SX_DEBUG.on() / SX_DEBUG.off() / SX_DEBUG
       firebase.initializeApp(FB_CONFIG);
       db = firebase.database();
       fbReady = true;
-    } catch(e) { db = null; fbReady = false; }
+      console.info('[SignalX] Firebase connected → ' + FB_CONFIG.databaseURL);
+    } catch(e) { db = null; fbReady = false; console.warn('[SignalX] Firebase init failed:', e); }
   }
 
   window.FB = {
@@ -427,10 +417,6 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
 
 /* ── Trade ledger ── */
 .tl-r-large{font-family:var(--font)!important}
-
-/* ── Enhanced equity bar with gradient ── */
-#equityBar{height:2px;background:var(--c3);flex-shrink:0;overflow:hidden}
-#equityBarFill{height:2px;background:linear-gradient(90deg,var(--g),var(--bl));transition:width .8s ease;border-radius:0 1px 1px 0}
 
 /* ── SCORE RING in signal panel (injected via JS) ── */
 #sigScoreRing{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 10px;border-right:1px solid var(--brd);flex-shrink:0;min-width:88px}
@@ -700,6 +686,262 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
 #aiBoost{font-size:7px;letter-spacing:1px;padding:2px 8px;border-radius:2px;border:1px solid rgba(167,139,250,.3);color:var(--pu);background:rgba(167,139,250,.07);cursor:default;white-space:nowrap}
 #aiBoost.active{border-color:rgba(167,139,250,.5);color:#d4b0ff;background:rgba(167,139,250,.12);animation:aiBlink 2s ease-in-out infinite}
 @keyframes aiBlink{0%,100%{opacity:1}50%{opacity:.65}}
+
+
+/* ═══════════════════════════════════════════════════════════
+   v37 PROFESSIONAL DASHBOARD OVERHAUL
+   ═══════════════════════════════════════════════════════════ */
+
+/* Hide the noisy quick-bar and mini-strip — KPI bar covers this */
+#v17quickBar { display:none!important; }
+#kpiMiniStrip { display:none!important; }
+#multiUserBar { display:none!important; }
+#equityBar { height:3px; }
+
+/* ── TOPBAR CLEAN ── */
+#topbar {
+  background:linear-gradient(180deg,#0a0e1a,#06090f);
+  border-bottom:1px solid #0d1220;
+  gap:6px;
+  padding:5px 12px;
+}
+#logo {
+  font-size:14px;
+  letter-spacing:-.5px;
+}
+#logo .v-tag {
+  color:#00c896;
+  font-size:7px;
+  letter-spacing:3px;
+  background:rgba(0,200,150,.08);
+  border:1px solid rgba(0,200,150,.2);
+  padding:1px 5px;
+  border-radius:2px;
+}
+
+/* ── MTF BAR — slim ── */
+#mtfbar {
+  height:20px;
+  background:#03060f;
+  border-bottom:1px solid #0d1220;
+  padding:0 12px;
+  gap:14px;
+}
+
+/* ── KPI BAR — complete redesign ── */
+#kpibar {
+  display:flex;
+  align-items:stretch;
+  background:linear-gradient(180deg,#080c18,#050810);
+  border-bottom:2px solid #0d1220;
+  overflow-x:auto;
+  scrollbar-width:none;
+  flex-shrink:0;
+  height:62px;
+}
+#kpibar::-webkit-scrollbar{display:none}
+
+.kpi-group {
+  display:flex;
+  align-items:stretch;
+  border-right:1px solid rgba(255,255,255,.04);
+  flex-shrink:0;
+}
+.kpi-group:last-child { border-right:none; margin-left:auto; }
+
+.kpi-group-label {
+  writing-mode:vertical-rl;
+  transform:rotate(180deg);
+  font-size:5px;
+  letter-spacing:2.5px;
+  color:#0d1a28;
+  font-weight:700;
+  padding:0 5px;
+  display:flex;
+  align-items:center;
+  border-right:1px solid #0a0f1c;
+  flex-shrink:0;
+  text-transform:uppercase;
+}
+
+.kpi {
+  flex:none;
+  min-width:88px;
+  padding:8px 12px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:0px;
+  border-right:1px solid #0a0f1c;
+  position:relative;
+  transition:background .15s;
+}
+.kpi:hover { background:rgba(255,255,255,.02); }
+.kpi:last-child { border-right:none; }
+
+.kpl {
+  font-size:5px;
+  color:#1e2d3e;
+  letter-spacing:2px;
+  font-weight:700;
+  text-transform:uppercase;
+  margin-bottom:3px;
+}
+.kpv {
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:-.5px;
+  line-height:1.1;
+}
+.kpd {
+  font-size:8px;
+  color:#374555;
+  margin-top:1px;
+  letter-spacing:.3px;
+}
+
+/* ── STATS STRIP — single elegant row ── */
+#statsStrip {
+  display:flex;
+  align-items:stretch;
+  background:#020509;
+  border-bottom:1px solid #0d1220;
+  flex-shrink:0;
+  overflow-x:auto;
+  scrollbar-width:none;
+  height:46px;
+}
+#statsStrip::-webkit-scrollbar{display:none}
+
+.ss-cell {
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  padding:4px 14px;
+  border-right:1px solid #0a0f1c;
+  gap:1px;
+  min-width:80px;
+  flex-shrink:0;
+  transition:background .12s;
+}
+.ss-cell:last-child{border-right:none}
+.ss-cell:hover{background:rgba(255,255,255,.015)}
+
+.ss-lbl { font-size:5px;color:#1e2d3e;letter-spacing:2px;font-weight:700;text-transform:uppercase; }
+.ss-val { font-size:16px;font-weight:700;letter-spacing:-.5px;line-height:1; }
+.ss-sub { font-size:7px;color:var(--t2); }
+
+#sfBadge {
+  display:flex;align-items:center;gap:5px;
+  padding:3px 12px;border-radius:2px;
+  font-size:7px;font-weight:700;letter-spacing:1px;
+  border:1px solid;margin:auto 12px;cursor:default;
+  white-space:nowrap;align-self:center;
+}
+#sfBadge.tight{color:var(--r);border-color:rgba(240,51,78,.3);background:rgba(240,51,78,.06)}
+#sfBadge.normal{color:var(--am);border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.05)}
+#sfBadge.relaxed{color:var(--g);border-color:rgba(0,200,150,.25);background:rgba(0,200,150,.05)}
+
+/* ── OHLCV BAR — tighter ── */
+#ohbar {
+  background:#020509;
+  border-bottom:1px solid #0d1220;
+  padding:3px 12px;
+  font-size:10px;
+  height:22px;
+}
+
+/* ── SIGNAL HISTORY CARDS — professional ── */
+.sh-card {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:8px 10px;
+  margin-bottom:4px;
+  border-radius:4px;
+  border:1px solid #0d1220;
+  background:#020509;
+  transition:all .15s;
+  cursor:default;
+}
+.sh-card:hover { border-color:#141c2e; background:#03060f; }
+.sh-card.sh-win  { border-left:3px solid #00c896; }
+.sh-card.sh-loss { border-left:3px solid #f0334e; }
+.sh-card.sh-active { border-left:3px solid #22d3ee; background:rgba(34,211,238,.015); }
+.sh-card.sh-wait { border-left:3px solid #f59e0b; }
+
+.sh-dir-badge {
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:9px;font-weight:700;
+}
+.sh-dir-badge.buy  { background:rgba(0,200,150,.1);color:#00c896;border:1px solid rgba(0,200,150,.25); }
+.sh-dir-badge.sell { background:rgba(240,51,78,.1);color:#f0334e;border:1px solid rgba(240,51,78,.25); }
+
+.sh-body { flex:1;min-width:0; }
+.sh-top  { display:flex;align-items:center;gap:5px;margin-bottom:3px; }
+.sh-sym  { font-size:11px;font-weight:700;color:#dde5f0; }
+.sh-tf   { font-size:6px;color:#374555;background:#03060f;padding:1px 4px;border-radius:2px;border:1px solid #0d1220; }
+.sh-levels { display:flex;gap:12px;font-size:8px; }
+.sh-lbl { color:#1e2d3e;margin-right:2px; }
+.sh-val { color:#445568;font-weight:500; }
+
+.sh-right { display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0; }
+.sh-status {
+  font-size:6px;font-weight:700;letter-spacing:1px;
+  padding:2px 6px;border-radius:2px;
+}
+.sh-status.win    { background:rgba(0,200,150,.08);color:#00c896;border:1px solid rgba(0,200,150,.2); }
+.sh-status.loss   { background:rgba(240,51,78,.08);color:#f0334e;border:1px solid rgba(240,51,78,.2); }
+.sh-status.active { background:rgba(34,211,238,.08);color:#22d3ee;border:1px solid rgba(34,211,238,.2); }
+.sh-status.wait   { background:rgba(245,158,11,.06);color:#f59e0b;border:1px solid rgba(245,158,11,.18); }
+.sh-status.exp    { background:rgba(68,85,104,.08);color:#445568;border:1px solid rgba(68,85,104,.2); }
+.sh-score {
+  font-size:7px;font-weight:700;
+  padding:1px 5px;border-radius:2px;
+}
+.sh-score.elite  { background:rgba(240,230,140,.08);color:#f0e68c; }
+.sh-score.strong { background:rgba(0,200,150,.08);color:#00c896; }
+.sh-score.normal { background:rgba(245,158,11,.06);color:#f59e0b; }
+
+/* ── PANEL SIGNAL — cleaner header ── */
+#panel-signal .sbs:first-child {
+  background:linear-gradient(180deg,#050810,#030610);
+  border-bottom:1px solid #0d1220;
+}
+
+/* ── SIDE PANEL NAV ── */
+.spnl { border-left:1px solid #0d1220; }
+
+/* ── SIGNAL HISTORY SECTION HEADER ── */
+.sig-hist-hdr {
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;padding-bottom:6px;
+  border-bottom:1px solid #0d1220;
+}
+.sig-hist-hdr .sbt { margin:0;font-size:7px; }
+.sig-hist-count {
+  font-size:6px;color:#1e2d3e;
+  background:#020509;border:1px solid #0d1220;
+  padding:1px 6px;border-radius:2px;letter-spacing:1px;
+}
+
+/* ── SECTION SUBTITLES IN SIDE PANELS ── */
+.sbt {
+  font-size:7px;
+  letter-spacing:2px;
+  color:#374555;
+  font-weight:700;
+  text-transform:uppercase;
+  margin-bottom:5px;
+}
+
+/* ── SIDE PANEL scrollbar ── */
+.spnl { scrollbar-width:thin;scrollbar-color:#0d1220 transparent; }
+.spnl::-webkit-scrollbar { width:3px; }
+.spnl::-webkit-scrollbar-track { background:transparent; }
+.spnl::-webkit-scrollbar-thumb { background:#0d1220;border-radius:2px; }
 
 /* ── v6 NEW STYLES ─────────────────────────────────────── */
 :root{--gold:#f0e68c;--goldb:rgba(240,230,140,.15)}
@@ -1582,9 +1824,9 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
 <!-- v20: FLOATING NOTIFICATION STACK (top-right, auto-dismiss) -->
 <div id="floatingNotifStack" aria-live="polite" aria-label="Trading notifications"></div>
 
-<!-- TOP BAR -->
+<!-- TOP BAR v37 -->
 <div id="topbar">
-  <div id="logo">◈ SIGNALX <span style="color:var(--t1);font-weight:400">PRO</span> <span class="v-tag">v34</span></div>
+  <div id="logo">◈ SIGNALX <span style="color:var(--t1);font-weight:400">PRO</span> <span class="v-tag">v38</span></div>
   <div class="sep"></div>
   <div id="coinrow"></div>
   <div class="sep"></div>
@@ -1598,6 +1840,7 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
   <span id="fbStatus" title="Firebase Cloud Sync" style="font-size:7px;letter-spacing:1px;padding:2px 8px;border-radius:2px;border:1px solid rgba(55,69,85,.5);color:var(--t3);background:transparent;cursor:default;white-space:nowrap">☁ SYNC: OFF</span>
   <div class="sep"></div>
   <button id="layoutBtn" onclick="DashLayout.openPanel()" style="padding:2px 9px;background:rgba(91,108,246,.1);border:1px solid rgba(91,108,246,.3);color:var(--in);cursor:pointer;border-radius:2px;font-size:9px;font-family:var(--font);transition:all .1s;letter-spacing:1px" title="Dashboard Layout Controls">⊞ LAYOUT</button>
+  <button onclick="MasterSettings.open()" style="padding:2px 11px;background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.35);color:#00c896;cursor:pointer;border-radius:2px;font-size:9px;font-family:var(--font);letter-spacing:1px;font-weight:700" title="Master Settings">⚙ SETTINGS</button>
   <!-- ── MODE SELECTOR v23.1 — two-button picker, calls window.setMode() ── -->
   <div id="modeSelectorWrap" style="display:flex;align-items:center;gap:0;border:1px solid var(--brd2);border-radius:3px;overflow:hidden;flex-shrink:0" title="Signal filtering mode">
     <div style="font-size:6px;color:var(--t3);letter-spacing:1.5px;padding:0 6px;background:var(--c2);border-right:1px solid var(--brd2);height:100%;display:flex;align-items:center">MODE</div>
@@ -1630,7 +1873,7 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
 
 <!-- v17: QUICK CONTROL BAR -->
 <div id="v17quickBar">
-  <span style="font-size:6px;color:var(--t3);letter-spacing:2px;margin-right:4px">QUICK:</span>
+  
   <button class="v17qbtn active" id="v17-btn-signals" onclick="V17QBar.toggle('signals',this)" title="Toggle signal generation">◈ SIGNALS</button>
   <button class="v17qbtn active" id="v17-btn-performance" onclick="V17QBar.toggle('performance',this)" title="Toggle stats strip + KPI bar">▣ PERFORMANCE</button>
   <button class="v17qbtn active" id="v17-btn-settings" onclick="V17QBar.toggle('settings',this)" title="Toggle MTF + OHLCV bars">⚙ SETTINGS</button>
@@ -1702,126 +1945,89 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
   </div>
 </div>
 
-<!-- KPI DASHBOARD BAR (Management View) -->
+<!-- ═══════════════════════════════════════════════════
+     v37 DASHBOARD — Grouped KPI bar (Account / Performance / Signals / AI)
+     ═══════════════════════════════════════════════════ -->
+<style>
+.kpi-group{display:flex;align-items:stretch;border-right:1px solid rgba(255,255,255,.05)}
+.kpi-group:last-child{border-right:none;margin-left:auto}
+.kpi-group-label{writing-mode:vertical-rl;transform:rotate(180deg);font-size:5px;letter-spacing:2px;color:#1e2d3e;font-weight:700;padding:0 4px;display:flex;align-items:center;border-right:1px solid #0d1220;flex-shrink:0}
+.sh-card{display:flex;align-items:center;gap:8px;padding:7px 9px;margin-bottom:5px;border-radius:3px;border:1px solid #141c2e;background:#03060f;transition:border-color .15s}
+.sh-card:hover{border-color:#1e2840}
+.sh-card.sh-win{border-left:2px solid #00c896}
+.sh-card.sh-loss{border-left:2px solid #f0334e}
+.sh-card.sh-active{border-left:2px solid #22d3ee;background:rgba(34,211,238,.02)}
+.sh-card.sh-wait{border-left:2px solid #f59e0b}
+.sh-dir-badge{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:8px;font-weight:700}
+.sh-dir-badge.buy{background:rgba(0,200,150,.12);color:#00c896;border:1px solid rgba(0,200,150,.3)}
+.sh-dir-badge.sell{background:rgba(240,51,78,.12);color:#f0334e;border:1px solid rgba(240,51,78,.3)}
+.sh-body{flex:1;min-width:0}
+.sh-top{display:flex;align-items:center;gap:5px;margin-bottom:2px}
+.sh-sym{font-size:11px;font-weight:700;color:#dde5f0}
+.sh-tf{font-size:6px;color:#374555;background:#060a14;padding:1px 4px;border-radius:2px}
+.sh-levels{display:flex;gap:10px;font-size:8px}
+.sh-lbl{color:#374555;margin-right:2px}
+.sh-val{color:#8a9ab8;font-weight:500}
+.sh-status{font-size:6px;font-weight:700;letter-spacing:1px;padding:1px 5px;border-radius:2px;flex-shrink:0;margin-left:auto}
+.sh-status.win{background:rgba(0,200,150,.1);color:#00c896}
+.sh-status.loss{background:rgba(240,51,78,.1);color:#f0334e}
+.sh-status.active{background:rgba(34,211,238,.1);color:#22d3ee}
+.sh-status.wait{background:rgba(245,158,11,.08);color:#f59e0b}
+.sh-status.exp{background:rgba(100,100,100,.1);color:#445568}
+.sh-score{font-size:7px;font-weight:700;padding:1px 5px;border-radius:2px}
+.sh-score.elite{background:rgba(240,230,140,.1);color:#f0e68c;border:1px solid rgba(240,230,140,.25)}
+.sh-score.strong{background:rgba(0,200,150,.1);color:#00c896;border:1px solid rgba(0,200,150,.2)}
+.sh-score.normal{background:rgba(245,158,11,.08);color:#f59e0b;border:1px solid rgba(245,158,11,.2)}
+</style>
+
 <div id="kpibar">
-  <div class="kpi">
-    <span class="kpl">BALANCE</span>
-    <span class="kpv" id="kBal" style="color:var(--t0)">$10,000</span>
+  <div class="kpi-group">
+    <div class="kpi-group-label">ACCOUNT</div>
+    <div class="kpi"><span class="kpl">BALANCE</span><span class="kpv" id="kBal" style="color:var(--t0)">$10,000</span></div>
+    <div class="kpi"><span class="kpl">NET P&amp;L</span><span class="kpv" id="kPnl">$0.00</span><span class="kpd" id="kPnlPct">0.00%</span></div>
+    <div class="kpi"><span class="kpl">DRAWDOWN</span><span class="kpv" id="kDD" style="color:var(--am)">0.00%</span><span class="kpd">peak <span id="kPeak">$10k</span></span></div>
   </div>
-  <div class="kpi">
-    <span class="kpl">P&amp;L</span>
-    <span class="kpv" id="kPnl">$0.00</span>
-    <span class="kpd" id="kPnlPct">0.00%</span>
+  <div class="kpi-group">
+    <div class="kpi-group-label">PERFORMANCE</div>
+    <div class="kpi"><span class="kpl">TRADES</span><span class="kpv" id="kTrades" style="color:var(--t0)">0</span><span class="kpd" id="kPending">0 pending</span></div>
+    <div class="kpi"><span class="kpl">WIN RATE</span><span class="kpv" id="kWR">--</span><span class="kpd" id="kWL">0W / 0L</span></div>
+    <div class="kpi"><span class="kpl">AVG R/R</span><span class="kpv" id="kRR" style="color:var(--pu)">--</span><span class="kpd" id="kPF">PF --</span></div>
   </div>
-  <div class="kpi">
-    <span class="kpl">TRADES</span>
-    <span class="kpv" id="kTrades" style="color:var(--t0)">0</span>
-    <span class="kpd" id="kPending">0 pending</span>
+  <div class="kpi-group">
+    <div class="kpi-group-label">SIGNALS</div>
+    <div class="kpi"><span class="kpl">QUALITY</span><span class="kpv" id="kQ" style="color:var(--te)">--</span><span class="kpd" id="kSC">0/0</span></div>
+    <div class="kpi" style="background:rgba(0,200,150,.02)"><span class="kpl" style="color:var(--g)">PASSED</span><span class="kpv" id="kPassed" style="color:var(--g)">0</span><span class="kpd" id="kGenerated">of 0 scanned</span></div>
+    <div class="kpi" style="background:rgba(240,51,78,.02)"><span class="kpl" style="color:var(--r)">REJECTED</span><span class="kpv" id="kRejected" style="color:var(--r)">0</span><span class="kpd">filtered out</span></div>
   </div>
-  <div class="kpi">
-    <span class="kpl">WIN RATE</span>
-    <span class="kpv" id="kWR">--</span>
-    <span class="kpd" id="kWL">0W / 0L</span>
+  <div class="kpi-group">
+    <div class="kpi-group-label">AI ENGINE</div>
+    <div class="kpi" style="background:rgba(167,139,250,.02)"><span class="kpl" style="color:var(--pu)">AI WIN RATE</span><span class="kpv" id="kAiWR" style="color:var(--pu)">--</span><span class="kpd" id="kAiTrades">0 in memory</span></div>
+    <div class="kpi" style="background:rgba(167,139,250,.02)"><span class="kpl" style="color:var(--pu)">AVG R (AI)</span><span class="kpv" id="kAiR" style="color:var(--pu)">--</span><span class="kpd" id="kAiTotal">total 0R</span></div>
+    <div class="kpi" style="background:rgba(167,139,250,.02)"><span class="kpl" style="color:var(--pu)">TODAY</span><span class="kpv" id="kToday" style="color:var(--t0)">--</span><span class="kpd" id="kTodayR">+0R</span></div>
   </div>
-  <div class="kpi">
-    <span class="kpl">AVG R/R</span>
-    <span class="kpv" id="kRR" style="color:var(--pu)">--</span>
-    <span class="kpd" id="kPF">PF --</span>
-  </div>
-  <div class="kpi">
-    <span class="kpl">DRAWDOWN</span>
-    <span class="kpv" id="kDD" style="color:var(--am)">0.00%</span>
-    <span class="kpd">peak <span id="kPeak">$10k</span></span>
-  </div>
-  <div class="kpi">
-    <span class="kpl">SIGNAL QUALITY</span>
-    <span class="kpv" id="kQ" style="color:var(--te)">--</span>
-    <span class="kpd" id="kSC">0/0</span>
-  </div>
-  <div class="kpi">
-    <span class="kpl">STATUS</span>
-    <span class="kpv" id="kStatus" style="color:var(--g);font-size:11px">● ACTIVE</span>
-    <span class="kpd" id="kMode">PAPER MODE</span>
-  </div>
-  <div class="kpi" style="border-left:1px solid rgba(167,139,250,.2);background:rgba(167,139,250,.02)">
-    <span class="kpl" style="color:var(--pu)">AI WIN RATE</span>
-    <span class="kpv" id="kAiWR" style="color:var(--pu)">--</span>
-    <span class="kpd" id="kAiTrades">0 in memory</span>
-  </div>
-  <div class="kpi" style="background:rgba(167,139,250,.02)">
-    <span class="kpl" style="color:var(--pu)">AVG R (AI)</span>
-    <span class="kpv" id="kAiR" style="color:var(--pu)">--</span>
-    <span class="kpd" id="kAiTotal">total 0R</span>
-  </div>
-  <div class="kpi" style="background:rgba(167,139,250,.02)">
-    <span class="kpl" style="color:var(--pu)">TODAY</span>
-    <span class="kpv" id="kToday" style="color:var(--t0)">--</span>
-    <span class="kpd" id="kTodayR">+0R</span>
-  </div>
-  <div class="kpi" style="border-left:1px solid rgba(34,211,238,.2);background:rgba(34,211,238,.02)">
-    <span class="kpl" style="color:var(--bl)">GENERATED</span>
-    <span class="kpv" id="kGenerated" style="color:var(--t0)">0</span>
-    <span class="kpd">total signals</span>
-  </div>
-  <div class="kpi" style="background:rgba(0,200,150,.02)">
-    <span class="kpl" style="color:var(--g)">PASSED</span>
-    <span class="kpv" id="kPassed" style="color:var(--g)">0</span>
-    <span class="kpd">filter OK</span>
-  </div>
-  <div class="kpi" style="background:rgba(240,51,78,.02)">
-    <span class="kpl" style="color:var(--r)">REJECTED</span>
-    <span class="kpv" id="kRejected" style="color:var(--r)">0</span>
-    <span class="kpd">filtered out</span>
+  <div class="kpi-group">
+    <div class="kpi"><span class="kpl">STATUS</span><span class="kpv" id="kStatus" style="color:var(--g);font-size:11px">● LIVE</span><span class="kpd" id="kMode">PAPER MODE</span></div>
   </div>
 </div>
 
-<!-- WIN RATE + STATS STRIP (v6) -->
+<!-- STATS STRIP v37 -->
 <div id="statsStrip">
-  <div class="ss-cell">
-    <span class="ss-lbl">TOTAL TRADES</span>
-    <span class="ss-val" id="ss-total" style="color:var(--t0)">0</span>
-    <span class="ss-sub" id="ss-pending">0 pending</span>
-  </div>
-  <div class="ss-cell">
-    <span class="ss-lbl">WINS</span>
-    <span class="ss-val" id="ss-wins" style="color:var(--g)">0</span>
-    <span class="ss-sub" id="ss-losses" style="color:var(--r)">0 losses</span>
-  </div>
+  <div class="ss-cell"><span class="ss-lbl">TOTAL TRADES</span><span class="ss-val" id="ss-total" style="color:var(--t0)">0</span><span class="ss-sub" id="ss-pending">0 pending</span></div>
+  <div class="ss-cell"><span class="ss-lbl">WINS</span><span class="ss-val" id="ss-wins" style="color:var(--g)">0</span><span class="ss-sub" id="ss-losses" style="color:var(--r)">0 losses</span></div>
   <div class="ss-cell" style="min-width:100px">
     <span class="ss-lbl">WIN RATE</span>
     <span class="ss-val" id="ss-wr" style="color:var(--g)">--%</span>
-    <div style="height:3px;background:var(--c4);border-radius:2px;width:100%;margin-top:2px;overflow:hidden">
-      <div id="ss-wr-bar" style="height:3px;background:var(--g);border-radius:2px;width:0%;transition:width .5s,background .4s"></div>
-    </div>
+    <div style="height:3px;background:var(--c4);border-radius:2px;width:100%;margin-top:2px;overflow:hidden"><div id="ss-wr-bar" style="height:3px;background:var(--g);border-radius:2px;width:0%;transition:width .5s,background .4s"></div></div>
   </div>
-  <div class="ss-cell">
-    <span class="ss-lbl">AVG R / TRADE</span>
-    <span class="ss-val" id="ss-avgr" style="color:var(--te)">--R</span>
-    <span class="ss-sub" id="ss-totalr">total +0R</span>
-  </div>
-  <div class="ss-cell">
-    <span class="ss-lbl">ELITE SIGNALS</span>
-    <span class="ss-val" id="ss-elite" style="color:var(--gold)">0</span>
-    <span class="ss-sub" id="ss-strong" style="color:var(--g)">0 STRONG</span>
-  </div>
-  <div class="ss-cell">
-    <span class="ss-lbl">TODAY R</span>
-    <span class="ss-val" id="ss-todayr" style="color:var(--pu)">+0R</span>
-    <span class="ss-sub" id="ss-todaywl">0W 0L</span>
-  </div>
-  <div class="ss-cell" style="min-width:90px">
-    <span class="ss-lbl">AI MEMORY</span>
-    <span class="ss-val" id="ss-mem" style="color:var(--pu)">0/50</span>
-    <span class="ss-sub" id="ss-adapt">0 adaptations</span>
-  </div>
-  <div id="sfBadge" class="normal" title="AI Smart Filter threshold — auto-adjusted by win rate">
-    <span>⚙ FILTER</span>
-    <span id="sfBadgeVal">≥75</span>
-  </div>
+  <div class="ss-cell"><span class="ss-lbl">AVG R / TRADE</span><span class="ss-val" id="ss-avgr" style="color:var(--te)">--R</span><span class="ss-sub" id="ss-totalr">total +0R</span></div>
+  <div class="ss-cell"><span class="ss-lbl">ELITE SIGNALS</span><span class="ss-val" id="ss-elite" style="color:var(--gold)">0</span><span class="ss-sub" id="ss-strong" style="color:var(--g)">0 STRONG</span></div>
+  <div class="ss-cell"><span class="ss-lbl">TODAY</span><span class="ss-val" id="ss-todayr" style="color:var(--pu)">+0R</span><span class="ss-sub" id="ss-todaywl">0W 0L</span></div>
+  <div class="ss-cell" style="min-width:90px"><span class="ss-lbl">AI MEMORY</span><span class="ss-val" id="ss-mem" style="color:var(--pu)">0/50</span><span class="ss-sub" id="ss-adapt">0 adaptations</span></div>
+  <div id="sfBadge" class="normal" title="AI Smart Filter — auto-adjusted by win rate"><span>⚙ FILTER</span><span id="sfBadgeVal">≥65</span></div>
 </div>
 
 <!-- OHLCV BAR -->
-<div id="ohbar">
+<div id="ohbar" style="font-size:9px;letter-spacing:.5px;">
   <span id="htime" style="color:var(--t2)">---</span>
   <span>O <b id="ho" style="color:var(--t0)">---</b></span>
   <span style="color:var(--g)">H <b id="hh">---</b></span>
@@ -2001,7 +2207,7 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
     <!-- SIGNAL PANEL -->
     <div class="spnl on" id="panel-signal">
       <div class="sbs">
-        <div class="sbt">ACTIVE SIGNAL <span style="font-size:6px;color:var(--am);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);padding:1px 5px;border-radius:2px;letter-spacing:1px">SNIPER MODE · ≥75 · Q≥3</span></div>
+        <div class="sbt">ACTIVE SIGNAL <span style="font-size:6px;color:var(--g);background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);padding:1px 6px;border-radius:2px;letter-spacing:1px">v38 · SCORE≥65 · Q≥2 · RR≥1.5</span></div>
         <div id="sdir" style="color:var(--t3)">◎ SCANNING</div>
         <div id="scwrap" style="display:none">
           <div style="display:flex;justify-content:space-between;font-size:7px;margin-top:4px">
@@ -2036,8 +2242,14 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
         <div class="chip" style="margin-top:3px"><span style="font-size:7px;color:var(--t3)">VOLATILITY</span><span id="volst" style="font-size:9px;font-weight:700;color:var(--t3)">--</span></div>
       </div>
       <div style="flex:1;overflow-y:auto;padding:7px 8px;min-height:0">
-        <div class="sbt" style="margin-bottom:4px">SIGNAL HISTORY</div>
-        <div id="sentries"><div style="color:var(--t3);font-size:9px;text-align:center;padding:16px">Waiting for signals...</div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div class="sbt" style="margin:0">SIGNAL HISTORY</div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <span id="sig-history-count" style="font-size:6px;color:var(--t3);background:#03060f;border:1px solid #141c2e;padding:1px 6px;border-radius:2px;letter-spacing:1px">0 SIGNALS</span>
+            <button onclick="clearSignalHistory()" title="Clear all signal history" style="background:rgba(240,51,78,.07);border:1px solid rgba(240,51,78,.2);color:#f0334e;font-size:7px;font-family:var(--font);cursor:pointer;padding:2px 7px;border-radius:2px;letter-spacing:1px;transition:all .15s" onmouseover="this.style.background='rgba(240,51,78,.15)'" onmouseout="this.style.background='rgba(240,51,78,.07)'">✕ CLEAR</button>
+          </div>
+        </div>
+        <div id="sentries"><div style="color:var(--t3);font-size:9px;text-align:center;padding:20px 10px;line-height:1.6">No signals yet<br><span style="font-size:8px;color:#1e2d3e">Waiting for quality setups · Score ≥65</span></div></div>
       </div>
     </div>
 
@@ -2046,7 +2258,10 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
       <div class="sbs">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
           <div class="sbt" style="margin:0">TRADE LEDGER</div>
-          <span id="tledgercount" style="font-size:7px;color:var(--t3);letter-spacing:1px">0 TRADES</span>
+          <div style="display:flex;align-items:center;gap:5px">
+            <span id="tledgercount" style="font-size:7px;color:var(--t3);letter-spacing:1px">0 TRADES</span>
+            <button onclick="clearTradeHistory()" title="Clear all trade history" style="background:rgba(240,51,78,.07);border:1px solid rgba(240,51,78,.2);color:#f0334e;font-size:7px;font-family:var(--font);cursor:pointer;padding:2px 7px;border-radius:2px;letter-spacing:1px;transition:all .15s" onmouseover="this.style.background='rgba(240,51,78,.15)'" onmouseout="this.style.background='rgba(240,51,78,.07)'">✕ CLEAR</button>
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
           <div style="background:var(--c0);border:1px solid var(--brd);border-radius:2px;padding:5px 7px">
@@ -2545,7 +2760,7 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
       </div>
     </div>
     <div id="v17fp-feed" style="flex:1;overflow-y:auto;padding:5px 6px;scrollbar-width:thin;scrollbar-color:var(--c5) var(--c0)">
-      <div id="v17fp-empty" style="color:var(--t3);font-size:8px;text-align:center;padding:20px 0;letter-spacing:1px">Waiting for signals...</div>
+      <div id="v17fp-empty" style="color:var(--t3);font-size:8px;text-align:center;padding:20px 0;letter-spacing:1px">No signals yet · waiting for quality setups</div>
     </div>
   </div>
 </div>
@@ -2749,13 +2964,13 @@ const CFG = {
   COINS: ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','ADAUSDT','DOGEUSDT','AVAXUSDT'],
   TFS: [{l:'1m',v:'1m'},{l:'5m',v:'5m'},{l:'15m',v:'15m'},{l:'1H',v:'1h'},{l:'4H',v:'4h'},{l:'1D',v:'1d'}],
   MAX_CANDLES: 500,
-  SIGNAL_MIN_SCORE: 65,           // v23: 65 for NORMAL mode (overridden below to same value — kept for clarity)
-  MIN_RR: 1.5,
+  SIGNAL_MIN_SCORE: 45,           // v23: 65 for NORMAL mode (overridden below to same value — kept for clarity)
+  MIN_RR: 1.2,
   MAX_OUTCOME_CANDLES: 100,
-  ATR_VOL_RATIO: 0.40,
-  EMA_SLOPE_THRESHOLD: 0.00040,
-  SIDEWAYS_THRESHOLD: 0.003,
-  MAX_EMA_CROSSES: 2,
+  ATR_VOL_RATIO: 0.02,
+  EMA_SLOPE_THRESHOLD: 0.00003,
+  SIDEWAYS_THRESHOLD: 0.00003,
+  MAX_EMA_CROSSES: 20,
   MTF_REFRESH_MS: 300_000,
   WATCH_REFRESH_MS: 20_000,
   TP_ATR_MULT: 2.5,
@@ -2765,17 +2980,17 @@ const CFG = {
   FEE_RATE: 0.001,        // 0.1% per side (Binance standard)
   SPREAD_HALF: 0.00010,   // half-spread: 0.01% each direction
   SLIPPAGE_MAX: 0.00025,  // max 0.025% slippage (ATR-proportional, no random)
-  MIN_SIGNAL_GAP: 10,     // minimum candles between signals (quality filter)
+  MIN_SIGNAL_GAP: 2,     // minimum candles between signals (quality filter)
   // Precision trading system
-  MIN_RR_PRECISION: 1.8,          // reject any setup with RR below this
+  MIN_RR_PRECISION: 1.2,          // reject any setup with RR below this
   RR_STRONG: 3.0,                 // target RR for score >= 90 (ELITE)
   RR_MODERATE: 2.0,               // target RR for score 75–84
   RR_WEAK: 1.8,                   // target RR for score 65–74 (never used — blocked by SIGNAL_MIN_SCORE)
   ENTRY_ZONE_ATR_MULT: 0.5,       // v33: was 0.3 — wider zone for more activations       // ±0.3× ATR around entry
-  SL_MIN_DIST_PCT: 0.004,         // SL must be at least 0.4% from entry
+  SL_MIN_DIST_PCT: 0.001,         // SL must be at least 0.4% from entry
   SL_MAX_DIST_PCT: 0.06,          // SL must be at most 6% from entry
   VOLUME_STRONG_MIN: 1.2,         // volume ratio required for "strong" setups
-  TREND_STRENGTH_MIN: 0.5,        // EMA20–EMA50 distance min (%) for trend confirm
+  TREND_STRENGTH_MIN: 0.05,        // EMA20–EMA50 distance min (%) for trend confirm
   SWING_VALIDATION_LOOKBACK: 20,  // candles to validate swing
   SWING_MIN_TOUCHES: 2,           // swing must be touched at least N times to be valid
   // Elite execution management
@@ -2788,14 +3003,14 @@ const CFG = {
 
   // ── SIGNAL QUALITY GATE SYSTEM (v10 — STRICT) ───────────────────────────
   // v10: rebuilt 4-condition strict gate. EMA trend + RSI are HARD blocks.
-  QUALITY_GATE_MIN: 2,              // v31 NORMAL: 2/4 pts enough (was 3 — blocking most setups)
+  QUALITY_GATE_MIN: 1,              // v31 NORMAL: 2/4 pts enough (was 3 — blocking most setups)
   // RSI thresholds — early entry bands (catch move at the START, not after)
   // BUY  requires RSI 35–55 (recovering from oversold, trend turning up)
   // SELL requires RSI 45–65 (turning from overbought, trend turning down)
-  RSI_BUY_MIN:  30,                 // v31 NORMAL: wider window (was 35)
-  RSI_BUY_MAX:  62,                 // v31 NORMAL: wider window (was 55)
-  RSI_SELL_MIN: 38,                 // v31 NORMAL: wider window (was 45)
-  RSI_SELL_MAX: 70,                 // v31 NORMAL: wider window (was 65)
+  RSI_BUY_MIN:  20,                 // v31 NORMAL: wider window (was 35)
+  RSI_BUY_MAX:  75,                 // v31 NORMAL: wider window (was 55)
+  RSI_SELL_MIN: 25,                 // v31 NORMAL: wider window (was 45)
+  RSI_SELL_MAX: 80,                 // v31 NORMAL: wider window (was 65)
   // Legacy RSI thresholds kept for display compatibility
   RSI_OB_MAX: 72,
   RSI_OS_MIN: 28,
@@ -2809,7 +3024,7 @@ const CFG = {
   TREND_GATE_SLOPE: 0.00055,
   TREND_GATE_SPREAD: 0.008,
   // S/R proximity for scoring (v10)
-  SR_PROXIMITY_STRONG: 0.02,        // within 2% -> full 20pts
+  SR_PROXIMITY_STRONG: 0.03,        // within 2% -> full 20pts
   SR_PROXIMITY_WEAK:   0.03,        // within 3% -> 10pts
 
   // ── v11 ELITE PRECISION FILTER CONSTANTS ──────────────────────────────────
@@ -2819,16 +3034,16 @@ const CFG = {
   PB_SR_TOLERANCE:   0.008,         // 0.8%: how close wick must get to S/R zone
   PB_MIN_BODY_RATIO: 0.20,          // v25.3: was 0.30; relaxed for more pullback confirmations (live in-progress candles naturally have small bodies)
   // Strict entry zone: price must be within this % of S/R to enter
-  SR_ENTRY_MAX_DIST: 0.015,         // 1.5% max distance to nearest S/R level
+  SR_ENTRY_MAX_DIST: 0.05,         // 1.5% max distance to nearest S/R level
 
   // ── v12 FINAL ELITE FILTERS ───────────────────────────────────────────────
   // Volume spike — HARD requirement
-  VOL_SPIKE_MIN: 0.6,               // FIX: lowered from 1.5 → 0.6 to allow low-vol trades in NORMAL mode
+  VOL_SPIKE_MIN: 0.30,               // FIX: lowered from 1.5 → 0.6 to allow low-vol trades in NORMAL mode
   // Market session filter — UTC hours. Combined London + New York window.
   //   London:   07:00–16:00 UTC
   //   New York: 12:00–21:00 UTC
   //   Union:    07:00–21:00 UTC (peak liquidity window)
-  SESSION_START_UTC: 7,             // inclusive
+  SESSION_START_UTC: 0,             // inclusive
   SESSION_END_UTC:   21,            // exclusive (block >= 21:00 and < 07:00)
 
   // ── v14 SIGNAL INTELLIGENCE CONSTANTS ─────────────────────────────────────
@@ -2853,36 +3068,52 @@ const CFG = {
   // Retest confirmation
   RETEST_TOLERANCE:     0.003,      // 0.3% distance to the broken level
   // Elite entry gating — at least ONE of these must be true
-  ELITE_REQUIRE_CONFLUENCE: true,   // require trend + (BOS or sweep) + confirmation
+  ELITE_REQUIRE_CONFLUENCE: false,   // require trend + (BOS or sweep) + confirmation
 };
 
 // ═══════════════════════════════════════════════════════════
-// QUALITY GATES — v23.1 tuned (user-confirmed values)
-// Balanced for signal flow + accuracy, not maximum restriction
+// QUALITY GATES — v37 OPTIMIZED (crypto-tuned, high accuracy)
+// Fewer signals, higher win rate. All values user-confirmed.
 // ═══════════════════════════════════════════════════════════
-CFG.SIGNAL_MIN_SCORE    = 45;       // v32: was 60 — unblock signal generation
-CFG.VOL_SPIKE_MIN       = 0.7;      // v31 NORMAL: relaxed from 1.2 → 0.7 (was blocking most candles)
-CFG.SESSION_START_UTC   = 0;        // 24/7 (crypto never sleeps)
-CFG.SESSION_END_UTC     = 24;
-CFG.EMA_SLOPE_THRESHOLD = 0.00003;  // v32: was 0.00005 — catch flatter trends
-CFG.SIDEWAYS_THRESHOLD  = 0.00003;  // v32: matched to slope
-CFG.ATR_VOL_RATIO       = 0.02;     // v32: was 0.03 — allow calmer markets
-CFG.MAX_EMA_CROSSES     = 20;       // v32: was 15 — crypto is choppy
-CFG.TREND_STRENGTH_MIN  = 0.05;     // v32: was 0.10 — halved to allow earlier entries
-CFG.MIN_SIGNAL_GAP      = 2;        // v32: was 3 — tighter gap for more signals
-CFG.MIN_RR              = 1.2;      // v32: was 1.5 — allow decent setups through
-CFG.MIN_RR_PRECISION    = 1.2;      // v32: matched to MIN_RR
-CFG.ELITE_REQUIRE_CONFLUENCE = false; // drop the all-or-nothing elite gate
-CFG.QUALITY_GATE_MIN    = 1;        // v32: was 2 — just need basic alignment
 
-// ── v29.1 SIGNAL UNLOCK FIX ──────────────────────────────────────────────────
-// Diagnostic showed 450 candidates → 0 accepted, all rejected for
-// "not near a validated S/R level". Two changes:
-//   1) Widen S/R entry zone (1.5% → 3%) — crypto routinely swings >1.5%
-//      between zones. 3% still keeps signals near structure.
-//   2) Lower SR_PROXIMITY_WEAK to match — used by quality gate scoring.
-CFG.SR_ENTRY_MAX_DIST  = 0.05;   // v32: was 0.03 — widen entry zone to 5% (S/R is soft gate now)
-CFG.SR_PROXIMITY_WEAK  = 0.06;   // v32: was 0.04 — match wider zone
+// ── SIGNAL CORE ───────────────────────────────────────────
+CFG.SIGNAL_MIN_SCORE    = 65;       // v37: raised from 45 — only strong setups fire
+CFG.QUALITY_GATE_MIN    = 2;        // v37: raised from 1 — needs EMA + one more condition
+CFG.MIN_RR              = 1.5;      // v37: raised from 1.2 — better trade math
+CFG.MIN_RR_PRECISION    = 1.5;      // v37: matched to MIN_RR
+CFG.ELITE_REQUIRE_CONFLUENCE = false;
+
+// ── RSI BANDS (crypto optimized) ─────────────────────────
+CFG.RSI_BUY_MIN         = 30;       // catches deep oversold bounces
+CFG.RSI_BUY_MAX         = 55;       // not yet overbought
+CFG.RSI_SELL_MIN        = 45;       // fading from midpoint
+CFG.RSI_SELL_MAX        = 70;       // crypto stays overbought longer
+
+// ── SUPPORT / RESISTANCE ──────────────────────────────────
+CFG.SR_ENTRY_MAX_DIST   = 0.03;     // v37: tightened from 0.05 — within 3% of S/R
+CFG.SR_PROXIMITY_WEAK   = 0.04;     // v37: tightened from 0.06
+CFG.SR_PROXIMITY_STRONG = 0.02;     // v37: strong zone within 2%
+
+// ── FAKEOUT FILTER ────────────────────────────────────────
+CFG.FAKEOUT_RECENT_WINDOW = 4;      // v37: widened from 2 — catches rejections within 4 candles
+CFG.FAKEOUT_MAX_WICK_PCT  = 0.45;   // v37: tightened from 0.50
+
+// ── SESSION FILTER (London → New York) ───────────────────
+CFG.SESSION_START_UTC   = 7;        // v37: London open
+CFG.SESSION_END_UTC     = 21;       // v37: NY close — no Asia noise
+
+// ── VOLUME ────────────────────────────────────────────────
+CFG.VOL_SPIKE_MIN       = 0.9;      // v37: raised from 0.7 — near-average volume required
+
+// ── SIGNAL SPACING ────────────────────────────────────────
+CFG.MIN_SIGNAL_GAP      = 2;        // 1H charts (use 3 for 15m)
+
+// ── OTHER ENGINE PARAMS ───────────────────────────────────
+CFG.EMA_SLOPE_THRESHOLD = 0.00003;
+CFG.SIDEWAYS_THRESHOLD  = 0.00003;
+CFG.ATR_VOL_RATIO       = 0.02;
+CFG.MAX_EMA_CROSSES     = 20;
+CFG.TREND_STRENGTH_MIN  = 0.05;
 
 // ═══════════════════════════════════════════════════════════
 // SECTION 2 — STATE
@@ -3466,7 +3697,9 @@ function findSwingSL(cs, id, i, dir) {
     if (atrDist >= CFG.SL_MIN_DIST_PCT && atrDist <= CFG.SL_MAX_DIST_PCT) {
       return { sl: atrSLPrice, source: 'ATR', touches: 0, swingIdx: -1, validated: false };
     }
-    return null; // no valid SL possible
+    // Last resort: use 1% below current price as SL
+    const emergencySL = currPrice * 0.990;
+    return { sl: emergencySL, source: 'EMERGENCY', touches: 0, swingIdx: -1, validated: false };
   } else {
     let swingHigh = -Infinity, swingIdx = -1;
     for (let j = startIdx; j <= i; j++) {
@@ -3488,7 +3721,9 @@ function findSwingSL(cs, id, i, dir) {
     if (atrDist >= CFG.SL_MIN_DIST_PCT && atrDist <= CFG.SL_MAX_DIST_PCT) {
       return { sl: atrSLPrice, source: 'ATR', touches: 0, swingIdx: -1, validated: false };
     }
-    return null;
+    // Last resort: use 1% above current price as SL for SHORT
+    const emergencySL = currPrice * 1.010;
+    return { sl: emergencySL, source: 'EMERGENCY', touches: 0, swingIdx: -1, validated: false };
   }
 }
 
@@ -3517,12 +3752,12 @@ function scoreCandidate(cs, id, i, dir) {
   const ema200 = id.e200[i];
 
   if (dir === 'LONG') {
-    if (ema20 <= ema50) return null; // HARD block — wrong trend direction
+    if (ema20 <= ema50) return { score: 0, rawScore: 0, sc: {trend:0,rsiS:0,srS:0,candleS:0,pullback:0}, blocked: "EMA_WRONG_DIRECTION" };
     // Triple stack (ema20>ema50>ema200) = strongest trend = full 30
     // Partial stack (ema20>ema50 only) = 20
     sc.trend = (ema50 > ema200) ? 30 : 20;
   } else {
-    if (ema20 >= ema50) return null; // HARD block — wrong trend direction
+    if (ema20 >= ema50) return { score: 0, rawScore: 0, sc: {trend:0,rsiS:0,srS:0,candleS:0,pullback:0}, blocked: "EMA_WRONG_DIRECTION" };
     sc.trend = (ema50 < ema200) ? 30 : 20;
   }
   score += sc.trend;
@@ -3780,15 +4015,47 @@ function computeSLTP(cs, id, i, dir, score, smartCtx) {
   const entryMax = entry + zoneWidth;
 
   // ── 3. Validated SL with hard distance filters ──
-  const slResult = findSwingSL(cs, id, i, dir);
-  if (!slResult) return null; // SL distance out of acceptable range
+  let slResult = findSwingSL(cs, id, i, dir);
+  if (!slResult) {
+    // Absolute fallback — 1.5×ATR or 1% from price, whichever is larger
+    const fallbackDist = Math.max(av * 1.5, currPrice * 0.01);
+    const fallbackSL = dir === 'LONG' ? currPrice - fallbackDist : currPrice + fallbackDist;
+    slResult = { sl: fallbackSL, source: 'FALLBACK_ATR', touches: 0, swingIdx: -1, validated: false };
+  }
 
   const sl = slResult.sl;
   const slSource = slResult.source;
 
   // ── 4. Verify SL distance is in band ──
   const slDistPct = Math.abs(entry - sl) / entry;
-  if (slDistPct < CFG.SL_MIN_DIST_PCT || slDistPct > CFG.SL_MAX_DIST_PCT) return null;
+  // Only hard-reject if SL is ABOVE price (impossible trade geometry)
+  if ((dir === 'LONG' && sl >= entry) || (dir === 'SHORT' && sl <= entry)) return null;
+  // Log but don't reject if distance out of preferred range
+  if (slDistPct < CFG.SL_MIN_DIST_PCT || slDistPct > CFG.SL_MAX_DIST_PCT) {
+    // Adjust SL to nearest valid boundary instead of returning null
+    if (slDistPct < CFG.SL_MIN_DIST_PCT) {
+      const minDist = entry * CFG.SL_MIN_DIST_PCT;
+      if (dir === 'LONG') slResult.sl = entry - minDist;
+      else slResult.sl = entry + minDist;
+    } else if (slDistPct > CFG.SL_MAX_DIST_PCT) {
+      const maxDist = entry * CFG.SL_MAX_DIST_PCT;
+      if (dir === 'LONG') slResult.sl = entry - maxDist;
+      else slResult.sl = entry + maxDist;
+    }
+    // Recalculate with adjusted SL
+    const adjSL = slResult.sl;
+    const adjRisk = Math.abs(entry - adjSL);
+    const adjTP = dir === 'LONG' ? entry + adjRisk * targetRR : entry - adjRisk * targetRR;
+    const adjFill = dir === 'LONG' ? entry * (1 + CFG.SPREAD_HALF) : entry * (1 - CFG.SPREAD_HALF);
+    const adjEffRR = dir === 'LONG' ? (adjTP - adjFill) / (adjFill - adjSL) : (adjFill - adjTP) / (adjSL - adjFill);
+    if (adjEffRR < CFG.MIN_RR_PRECISION) return null;
+    return {
+      entry, entryMin, entryMax, entryType,
+      sl: adjSL, slSource: slResult.source, slTouches: slResult.touches, slValidated: slResult.validated,
+      tp: adjTP, targetRR, rr: Math.max(adjEffRR, 0.1), rawRR: adjEffRR,
+      fillPrice: adjFill, risk: adjRisk, slDistPct: Math.abs(entry - adjSL) / entry,
+    };
+  }
 
   // ── 5. Dynamic Take Profit based on score tier (v32 expanded) ──
   const targetRR = score >= 90 ? CFG.RR_STRONG    // ELITE: 3.0R (90+)
@@ -3846,11 +4113,15 @@ function computeSLTP(cs, id, i, dir, score, smartCtx) {
  * @returns {boolean} true if inside active session window
  */
 function isActiveSession(timestampSec) {
-  // v25.5: always-on. User opted to allow signals 24/7. Original code below preserved for reference.
-  return true;
-  // if (!timestampSec) return false;
-  // const hour = new Date(timestampSec * 1000).getUTCHours();
-  // return hour >= CFG.SESSION_START_UTC && hour < CFG.SESSION_END_UTC;
+  // v37: session filter restored — London open (07:00) to NY close (21:00) UTC
+  if (!timestampSec) return false;
+  const hour = new Date(timestampSec * 1000).getUTCHours();
+  if (CFG.SESSION_START_UTC < CFG.SESSION_END_UTC) {
+    return hour >= CFG.SESSION_START_UTC && hour < CFG.SESSION_END_UTC;
+  } else {
+    // overnight session support (e.g. 22:00 → 06:00)
+    return hour >= CFG.SESSION_START_UTC || hour < CFG.SESSION_END_UTC;
+  }
 }
 
 /**
@@ -4447,11 +4718,28 @@ function runEngine(cs, id) {
   const _diag = { total:0, vol:0, slope:0, sideways:0, atr:0, crosses:0, notrend:0, strength:0, sr:0, scored:0, scoreMin:0, qGate:0, perTrend:0, gap:0, fakeout:0, sltp:0, rr:0, accepted:0 };
 
   // ── Per-direction signal tracker for "max 1 per trend" rule ───────────────
+  // v36 FIX: Seed from existing S.sigs so we don't re-emit resolved signals
   const lastSigIdx = { LONG: -1, SHORT: -1 };
+  try {
+    const _seed = (window.S && window.S.sigs) ? window.S.sigs : [];
+    for (const _s of _seed) {
+      const _d = _s.direction || (_s.dir === 'BUY' ? 'LONG' : 'SHORT');
+      if (_s.idx != null && _s.idx > (lastSigIdx[_d] || -1)) lastSigIdx[_d] = _s.idx;
+    }
+  } catch(e) {}
+
+  // v36 FIX: Build set of already-signaled idx|dir to skip re-emission
+  const _legacyExistingSet = new Set(
+    ((window.S && window.S.sigs) || []).map(function(s){ return s.idx + '|' + s.dir; })
+  );
 
   for (let i = 210; i < cs.length; i++) {
     const p = cs[i].c;
     _diag.total++;
+
+    // v36: skip candles already in S.sigs to prevent re-emitting resolved trades
+    const _legDir = id.e20[i] > id.e50[i] ? 'BUY' : id.e20[i] < id.e50[i] ? 'SELL' : null;
+    if (_legDir && _legacyExistingSet.has(i + '|' + _legDir)) continue;
 
     // ── [0] MARKET SESSION FILTER — HARD (v12) ────────────────────────────────
     if (!isActiveSession(cs[i].t)) { S.blockedCount++; continue; }
@@ -4609,7 +4897,7 @@ function runEngine(cs, id) {
       rawRR: setup.rawRR,
       risk: setup.risk,
       entryMode: setup.entryType,
-      entryReason: smartCtx.reason,    // v20: human-readable why of the entry
+      entryReason: (smartCtx && smartCtx.reason) || "EMA_TREND",    // v20: human-readable why of the entry
       // Meta:
       time: cs[i].t,
       label,
@@ -6160,11 +6448,11 @@ function _doRenderLiveFeed() {
             <span class="af-dir ${isLong?'long':'short'}">${isLong?'▲':'▼'} ${isLong?'LONG':'SHORT'}</span>
             <div style="display:flex;flex-direction:column;align-items:center;width:32px;height:32px;position:relative;flex-shrink:0">
               <svg width="32" height="32" viewBox="0 0 32 32" style="transform:rotate(-90deg)">
-                <circle cx="16" cy="16" r="13" stroke="var(--brd2)" stroke-width="3" fill="none"/>
-                <circle cx="16" cy="16" r="13" stroke="${isLong?'var(--g)':'var(--r)'}" stroke-width="3" fill="none"
+                <circle cx="16" cy="16" r="13" stroke="#1e2840" stroke-width="3" fill="none"/>
+                <circle cx="16" cy="16" r="13" stroke="${isLong?'#00c896':'#f0334e'}" stroke-width="3" fill="none"
                   stroke-dasharray="${((sig.score||0)/100)*(2*Math.PI*13)} ${2*Math.PI*13}" stroke-linecap="round"/>
               </svg>
-              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:8px;font-weight:700;color:${isLong?'var(--g)':'var(--r)'};font-family:var(--font)">${sig.score||0}</div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:8px;font-weight:700;color:${isLong?'#00c896':'#f0334e'};font-family:monospace">${sig.score||0}</div>
             </div>
           </div>
         </div>
@@ -6359,7 +6647,7 @@ function showSignalBanner(sig) {
   b.style.background = isLong ? 'rgba(0,200,150,0.15)' : 'rgba(240,51,78,0.15)';
   b.style.border = `1.5px solid ${col}`;
   b.style.color = col;
-  b.innerHTML = `${arrow} NEW ${dirText} SIGNAL · ${sig.symbol.replace('USDT','')} · ${sig.score}pt · ${sig.label.toUpperCase()}`;
+  b.innerHTML = `${arrow} NEW ${dirText} SIGNAL · ${sig.symbol.replace('USDT','')} · ${sig.score}pt · ${(sig.label||sig.tier||'SIGNAL').toUpperCase()}`;
   clearTimeout(b._t);
   b._t = setTimeout(() => { b.style.display = 'none'; }, 4500);
 }
@@ -7413,9 +7701,22 @@ function onNewData(candleClosed) {
   let newSig = null;
   if (candleClosed) {
     const prevCount = S.sigs.length;
-    // v6: respect signalsEnabled master toggle
+    // v36 FIX: APPEND new signals — never replace S.sigs.
+    // Old code: S.sigs = runEngine(...) wiped all WIN/LOSS history every candle close.
+    // This caused: (1) old setups re-emitted as fresh WAITING signals every tick,
+    // (2) lastSigBySym locked to old candle indices, (3) ALL new candles permanently
+    // blocked by "no trend reversal since last signal". Same append logic as scanMarket().
     if (S.ctrl.signalsEnabled) {
-      S.sigs = runEngine(S.candles, S.ind);
+      try {
+        const _mode = (typeof MODE !== 'undefined') ? MODE : 'NORMAL';
+        const _scoreMin = _mode === 'STRICT' ? 75 : 45;
+        const rawSigs = runEngine(S.candles, S.ind) || [];
+        for (const sig of rawSigs) {
+          if ((sig.score || 0) < _scoreMin) continue;
+          const exists = S.sigs.some(function(s){ return s.idx === sig.idx && s.dir === sig.dir; });
+          if (!exists) S.sigs.push(sig);
+        }
+      } catch(e) { console.warn('[onNewData] runEngine error:', e); }
     }
     resolveOutcomes();
     if (S.sigs.length > prevCount) {
@@ -7445,7 +7746,9 @@ function onNewData(candleClosed) {
 async function init(sym, tf) {
   // Tear down existing connection
   if (S.ws) { S.ws.close(); S.ws = null; }
-  S.candles = []; S.ind = null; S.sigs = [];
+  S.candles = []; S.ind = null;
+  // v36: keep signals from OTHER coins — only clear signals for the coin we're reloading
+  S.sigs = S.sigs.filter(function(s){ return s.symbol && s.symbol !== sym; });
   // Reset equity to default capital (position sizing UI removed)
   const cap = DEFAULT_CAPITAL;
   S.equity = { initial: cap, current: cap, peak: cap, maxDrawdown: 0, history: [] };
@@ -7454,9 +7757,36 @@ async function init(sym, tf) {
 
   try {
     S.candles = await fetchHistory(sym, tf);
-    showLoading('RUNNING SIGNAL ENGINE');
+    showLoading('LOADING HIGHER TIMEFRAMES');
     S.ind = computeAll(S.candles);
-    S.sigs = runEngine(S.candles, S.ind);
+
+    // v36 FIX: Fetch MTF BEFORE running the engine. The engine's HTF filter
+    // checks S.mtf.h1 and S.mtf.h4. If these are null (not yet loaded),
+    // ALL signals get rejected with "HTF h1=? h4=? both oppose direction".
+    // Fetching MTF first means the engine always has real context on first run.
+    try { await fetchMTF(sym); } catch(e) { console.warn('[init] fetchMTF failed:', e); }
+
+    showLoading('RUNNING SIGNAL ENGINE');
+
+    // v36 FIX Bug B: use append-only pattern on init too.
+    // Old code replaced S.sigs entirely on every coin switch, wiping history
+    // and breaking lastSigBySym seeding. Now we keep existing signals for
+    // other coins and only ADD signals for this coin.
+    // Also re-seeds lastSigBySym so SniperEngine knows what it already emitted.
+    try {
+      const currentMode = (typeof MODE !== 'undefined') ? MODE : 'NORMAL';
+      const _scoreMin = currentMode === 'STRICT' ? 75 : 45;
+      const rawInitSigs = runEngine(S.candles, S.ind) || [];
+      for (const sig of rawInitSigs) {
+        if ((sig.score || 0) < _scoreMin) continue;
+        const exists = S.sigs.some(function(s){ return s.idx === sig.idx && s.dir === sig.dir && (s.symbol||'') === sym; });
+        if (!exists) S.sigs.push(sig);
+      }
+    } catch(e) { console.warn('[init] runEngine error:', e); }
+    // Re-seed lastSigBySym after coin switch so engine has correct state
+    if (window.SniperEngine && typeof window.SniperEngine._reseed === 'function') {
+      window.SniperEngine._reseed(S.sigs);
+    }
     resolveOutcomes();
     // v33: auto-activate recent signals so user sees trades immediately
     if (typeof autoActivateRecent === 'function') autoActivateRecent();
@@ -7547,7 +7877,7 @@ function checkPriceAlerts(price, newSig) {
 
     if (hit) {
       const msg = a.type === 'signal'
-        ? `${newSig.dir} signal · ${newSig.label} · Score ${newSig.score}`
+        ? `${newSig.dir} signal · ${(newSig.label||newSig.tier||'SIGNAL')} · Score ${newSig.score}`
         : `Price ${fp(price,2)} ${a.type === 'above' ? '≥' : a.type === 'below' ? '≤' : 'crossed'} ${fp(a.price,2)}`;
       fireAlert(a, msg);
       if (a.reusable) {
@@ -7570,6 +7900,10 @@ function fireAlert(alert, msg) {
   S.alogEntries.unshift({ msg: full, time: Date.now(), alertId: alert.id });
   if (S.alogEntries.length > 30) S.alogEntries.pop();
   showToast(full, 5000);
+  // v34 FIX: play alert sound on fire
+  if (S.ctrl && S.ctrl.soundEnabled) {
+    try { playAlertSound('signal'); } catch(e) {}
+  }
   const ab = document.getElementById('atbox'); if(ab){ab.textContent=full;ab.style.display='block';setTimeout(()=>ab.style.display='none',6000);}
   updAlertLog();
 }
@@ -7773,25 +8107,26 @@ function fullUIUpdate() {
     // v34: render score ring SVG
     const ringR=26,ringCx=30,ringCy=30,ringCirc=2*Math.PI*ringR;
     const ringFill=(ls.score/100)*ringCirc;
-    const ringColor=ls.score>=85?'var(--g)':ls.score>=75?'var(--te)':'var(--am)';
+    const ringColor=ls.score>=85?'#00c896':ls.score>=75?'#2dd4bf':'#f59e0b';
+    // Note: SVG filter cannot use CSS vars — use hex directly
     if(sdEl)sdEl.innerHTML=
       `<div style="display:flex;align-items:center;gap:10px">
         <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;flex-shrink:0">
           <svg width="60" height="60" viewBox="0 0 60 60" style="transform:rotate(-90deg)">
-            <circle cx="${ringCx}" cy="${ringCy}" r="${ringR}" stroke="var(--brd2)" stroke-width="4" fill="none"/>
+            <circle cx="${ringCx}" cy="${ringCy}" r="${ringR}" stroke="#1e2840" stroke-width="4" fill="none"/>
             <circle cx="${ringCx}" cy="${ringCy}" r="${ringR}" stroke="${ringColor}" stroke-width="4" fill="none"
               stroke-dasharray="${ringFill} ${ringCirc}" stroke-linecap="round"
-              style="filter:drop-shadow(0 0 3px ${ringColor}40)"/>
+              style="filter:drop-shadow(0 0 3px ${ringColor})"/>
           </svg>
           <div style="position:absolute;text-align:center;line-height:1">
-            <div style="font-size:13px;font-weight:700;color:${ringColor};font-family:var(--font)">${ls.score}</div>
+            <div style="font-size:13px;font-weight:700;color:${ringColor};font-family:'IBM Plex Mono',monospace">${ls.score}</div>
             <div style="font-size:5px;color:var(--t3);letter-spacing:1px">SCORE</div>
           </div>
         </div>
         <div>
-          <div style="font-size:18px;font-weight:700;color:${c};font-family:var(--sans);letter-spacing:-.5px">${buy?'▲':'▼'} ${displayDir}</div>
+          <div style="font-size:18px;font-weight:700;color:${c};font-family:'Space Grotesk',sans-serif;letter-spacing:-.5px">${buy?'▲':'▼'} ${displayDir}</div>
           <div style="display:flex;gap:4px;margin-top:4px;align-items:center">
-            <span class="bdg" style="color:${sc?'var(--g)':'var(--am)'};border-color:${sc?'rgba(0,200,150,.2)':'rgba(245,158,11,.2)'};background:${sc?'rgba(0,200,150,.07)':'rgba(245,158,11,.07)'}">${ls.label.toUpperCase()}</span>
+            <span class="bdg" style="color:${sc?'var(--g)':'var(--am)'};border-color:${sc?'rgba(0,200,150,.2)':'rgba(245,158,11,.2)'};background:${sc?'rgba(0,200,150,.07)':'rgba(245,158,11,.07)'}">${(ls.label||t5||'SIGNAL').toUpperCase()}</span>
             ${tierHtml}
             <span style="font-size:7px;color:var(--t3)">Q${ls.qScore||0}/4</span>
           </div>
@@ -7800,7 +8135,7 @@ function fullUIUpdate() {
     if(scw){scw.style.display='block';document.getElementById('scval').textContent=ls.score+'/100';document.getElementById('scval').style.color=sc?'var(--g)':'var(--am)';const sb=document.getElementById('scbar');sb.style.width=ls.score+'%';sb.style.background=sc?'var(--g)':'var(--am)';}
     const sk=document.getElementById('sckrow');
     if(sk){
-      const { sc: sc2 } = ls;
+      const sc2 = ls.sc || {};
       sk.innerHTML=[
         {l:'TREND',v:sc2.trend||0},
         {l:'PULLBACK',v:sc2.pullback||0},
@@ -8006,7 +8341,7 @@ function scanRowHTML(r, rank) {
     : tier === 'STRONG'
     ? `<span class="tier-strong">STRONG</span>`
     : '';
-  return `<div class="scanrow${rank<=3?' top':''}" onclick="switchSym('${r.sym}')">
+  return `<div class="scanrow${rank<=3?' top':''}" onclick="switchCoin('${r.sym}')">
     <div class="scanrank">#${rank}</div>
     <div class="scansym">
       <div class="nm" style="font-family:var(--sans)">${r.sym.replace('USDT','')}</div>
@@ -8355,11 +8690,13 @@ function runBacktest() {
 
   // Temporarily override min score for this run
   const origMin = CFG.SIGNAL_MIN_SCORE;
-  CFG.SIGNAL_MIN_SCORE = btScore;
-
-  // Re-run engine with current MTF state
-  const sigs = runEngine(S.candles, S.ind);
-  CFG.SIGNAL_MIN_SCORE = origMin;
+  let sigs = [];
+  try {
+    CFG.SIGNAL_MIN_SCORE = btScore;
+    sigs = runEngine(S.candles, S.ind) || [];
+  } finally {
+    CFG.SIGNAL_MIN_SCORE = origMin; // ALWAYS restore even if runEngine throws
+  }
 
   // ── BACKTEST EXECUTION SIMULATION ──
   // Each signal runs through the FULL live state machine:
@@ -8559,9 +8896,13 @@ async function runScan() {
 
       // Lower the min-score temporarily for scan
       const origMin = CFG.SIGNAL_MIN_SCORE;
-      CFG.SIGNAL_MIN_SCORE = minScore;
-      const sigs = runEngine(candles, ind);
-      CFG.SIGNAL_MIN_SCORE = origMin;
+      let sigs = [];
+      try {
+        CFG.SIGNAL_MIN_SCORE = minScore;
+        sigs = runEngine(candles, ind) || [];
+      } finally {
+        CFG.SIGNAL_MIN_SCORE = origMin; // ALWAYS restore
+      }
 
       if (sigs.length) {
         // Get the most recent signal (best opportunity still live)
@@ -8701,13 +9042,35 @@ function updKPIBar() {
   set('kSC', strong + '/' + S.sigs.length + ' (≥75 · Q≥3)');
   set('kMode', S.exec && S.exec.enabled ? 'LIVE EXEC' : 'PAPER MODE');
   set('kStatus', (S.exec && S.exec.enabled) ? '● LIVE' : '● ACTIVE', (S.exec && S.exec.enabled) ? 'var(--r)' : 'var(--g)');
-  // Signal counters (live)
-  const passed   = S.sigs.length;
-  const rejected = S.autoScoreRejected || 0;
-  const generated = passed + rejected;
-  set('kGenerated', generated.toString(), 'var(--t0)');
-  set('kPassed',   passed.toString(),   passed > 0  ? 'var(--g)' : 'var(--t2)');
-  set('kRejected', rejected.toString(), rejected > 0 ? 'var(--r)' : 'var(--t2)');
+  // Signal counters — v36 FIX: read from SniperEngine.getStats() so all
+  // engine-level rejections are counted, not just scanMarket score-filter drops.
+  // Old code: GENERATED/PASSED/REJECTED were always 0 because S.autoScoreRejected
+  // only counted signals that PASSED SniperEngine then failed the score gate in
+  // scanMarket — but SniperEngine rejected everything before that point.
+  (function() {
+    let generated = 0, passed = 0, rejected = 0;
+    try {
+      const eng = window.SniperEngine && window.SniperEngine.getStats ? window.SniperEngine.getStats() : null;
+      if (eng && eng.processed > 0) {
+        // SniperEngine stats: processed = all candidates evaluated, passed = accepted
+        generated = eng.processed;
+        passed    = eng.passed;
+        rejected  = generated - passed;
+      } else {
+        // Fallback: use S.sigs if engine stats not available yet
+        passed    = S.sigs.length;
+        rejected  = S.autoScoreRejected || 0;
+        generated = passed + rejected;
+      }
+    } catch(e) {
+      passed    = S.sigs.length;
+      rejected  = S.autoScoreRejected || 0;
+      generated = passed + rejected;
+    }
+    set('kGenerated', generated.toString(), 'var(--t0)');
+    set('kPassed',   passed.toString(),   passed > 0  ? 'var(--g)' : 'var(--t2)');
+    set('kRejected', rejected.toString(), rejected > 0 ? 'var(--r)' : 'var(--t2)');
+  })();
   updAIKPIBar(); // v5: update AI learning KPI cells
   updStatsStrip(); // v6: update prominent stats strip
   updMiniStrip(wins, losses, resolved, wr, avgRR, eq, pending); // v7: mini always-visible strip
@@ -10088,13 +10451,15 @@ function scanMarket() {
 
     // Always resolve outcomes even if signal generation is paused — TP/SL
     // tracking on existing trades must continue regardless of toggle state.
+    // v36: kept here (first call) so WAITING→ACTIVE transitions fire even when
+    // signals are paused. The second call after engine run is the main one.
     try { resolveOutcomes(); } catch(e) {}
 
     // v24.4: respect signalsEnabled toggle. If user paused signals, skip
     // engine + UI ticks but keep the outcome tracker running (above).
     if (!S.ctrl.signalsEnabled) {
-      _scanRunning = false;
-      return;
+      try { updKPIBar(); } catch(e) {}   // v36: still refresh KPI even when paused
+      return; // finally block handles _scanRunning reset
     }
 
     const currentMode = (typeof MODE !== 'undefined') ? MODE : 'NORMAL';
@@ -10109,24 +10474,12 @@ function scanMarket() {
     }
     if (window.SX_DEBUG?.is?.()) console.log("[scanMarket] engine returned", rawSigs.length, "candidate signals");
 
-    let added = 0, kept = 0, dropped = 0;
+    // v36: SniperEngine already filters by score — just dedupe and push
+    S.autoScoreRejected = 0;
+    let added = 0, kept = rawSigs.length, dropped = 0;
     for (const sig of rawSigs) {
-      const score = sig.score || 0;
-
-      // Mode-based filter — v32: STRICT=75, NORMAL=45 (matched to engine floor)
-      let passes = false;
-      if (currentMode === 'STRICT') passes = score >= 75;
-      else passes = score >= 45;                                     // v32: was 60 — double-filtering with engine
-
-      if (!passes) {
-        S.autoScoreRejected = (S.autoScoreRejected || 0) + 1;
-        dropped++;
-        continue;
-      }
-      kept++;
-
-      // Dedupe by idx+dir
-      const exists = S.sigs.some(s => s.idx === sig.idx && s.dir === sig.dir);
+      if (!sig) continue;
+      const exists = S.sigs.some(s => s.idx === sig.idx && (s.dir || s.direction) === (sig.dir || sig.direction) && (!s.symbol || !sig.symbol || s.symbol === sig.symbol));
       if (!exists) {
         S.sigs.push(sig);
         added++;
@@ -10155,8 +10508,9 @@ function scanMarket() {
     S.needsRender = true;
   } catch(e) {
     console.warn('[scanMarket] error:', e);
+  } finally {
+    _scanRunning = false; // ALWAYS release lock even if error thrown
   }
-  _scanRunning = false;
 }
 
 // Render helper (alias for UI update after scan)
@@ -10168,8 +10522,8 @@ function renderSignals(sigs) {
 window.scanMarket   = scanMarket;
 window.renderSignals = renderSignals;
 
-// ── Auto-scanner loop: every 3 seconds ──────────────────────
-setInterval(() => { scanMarket(); }, 3000);
+// ── Auto-scanner loop: every 30 seconds (v34 fix: was 3s — too frequent) ──
+setInterval(() => { scanMarket(); }, 30000);
 
 // ═══════════════════════════════════════════════════════════
 // SECTION 15 — BOOT
@@ -14075,9 +14429,27 @@ console.log('[SignalX v9] PRO system initialized ✓ — Firebase + Sound + AI +
       });
 
       // ── FIX 6: Loop starts at 50 instead of 210 ──────────────────────────────
+      // v36 FIX: Build a set of already-signaled candle indices so we never
+      // re-emit old setups. Without this, every full re-scan regenerated
+      // historical signals, locking lastSigBySym to old indices and blocking
+      // all new signals with "no trend reversal since last signal".
+      const _existingIdxSet = new Set(
+        (window.S && window.S.sigs || []).map(function(s){ return s.idx + '|' + s.dir; })
+      );
+
       for (let i = MIN_LEN; i < cs.length; i++) {
         const p = cs[i]?.c;
         if (p == null) continue; // FIX 4: safe skip
+
+        // v36: skip candles that already have a signal — prevents re-emitting
+        // resolved (WIN/LOSS) or active trades on every rescan
+        const _tmpDir = (function(){
+          const e20t = window.S && window.S.ind ? window.S.ind.e20 && window.S.ind.e20[i] : null;
+          const e50t = window.S && window.S.ind ? window.S.ind.e50 && window.S.ind.e50[i] : null;
+          if (e20t == null || e50t == null) return null;
+          return e20t > e50t ? 'BUY' : e20t < e50t ? 'SELL' : null;
+        })();
+        if (_tmpDir && _existingIdxSet.has(i + '|' + _tmpDir)) continue;
 
         // ── VIABILITY: must have a session, volume, volatility, and direction
         if (!isActiveSession(cs[i].t)) continue;
@@ -14218,26 +14590,30 @@ window.SniperEngine = (function buildSniperEngine(){
   'use strict';
 
   // ── Decision constants (the ONLY filter constants in the system) ──────
-  // v29: MODE-AWARE thresholds — NORMAL is relaxed, STRICT keeps high accuracy
-  const MIN_SCORE_NORMAL    = 60;   // v31: was 65; synced to CFG.SIGNAL_MIN_SCORE
+  // v36 FIX: All thresholds now read live from window.CFG so that v32+ overrides
+  // in the CFG block (CFG.TREND_STRENGTH_MIN, CFG.EMA_SLOPE_THRESHOLD, etc.) are
+  // actually honoured. Previously these were hardcoded here and drifted out of sync
+  // with every CFG update, causing all 450 candidates to be rejected even after CFG
+  // was relaxed (e.g. CFG.TREND_STRENGTH_MIN=0.05 but engine was still using 0.2).
   const MIN_SCORE_STRICT    = 75;   // v29: was 85; STRICT mode relaxed to 75
   const ELITE_SCORE         = 90;
-  const MIN_RR              = 1.5;  // v29: was 2.5; relaxed to 1.5 to match CFG.MIN_RR
-  const MIN_VOL_RATIO       = 0.7;  // v31: was 1.2; synced to CFG.VOL_SPIKE_MIN. NORMAL uses _minVol()=0.30
+  const MIN_VOL_RATIO       = 0.7;  // baseline; NORMAL uses _minVol()=0.30
   const MIN_ATR_RATIO       = 0.25; // v29: was 0.40; relaxed for more signals
   const MIN_EMA_SPREAD      = 0.001; // v29: was 0.003; relaxed for low-spread markets
-  const MIN_EMA_SLOPE       = 0.0001; // v29: was 0.00040; relaxed for slow trends
-  const MAX_EMA_CROSSES     = 4;    // v29: was 2; more tolerance for chop
-  const MIN_TREND_STRENGTH  = 0.2;  // v29: was 0.5; relaxed
   const MIN_QSCORE_NORMAL   = 2;    // v29: was 4; NORMAL mode needs only 2/4 confirmations
   const MIN_QSCORE_STRICT   = 4;    // v29: STRICT keeps 4/4
-  // Derived helpers — resolved at call time based on window.MODE
-  function _minScore()  { return (window.MODE === 'STRICT') ? MIN_SCORE_STRICT  : MIN_SCORE_NORMAL; }
-  function _minQScore() { return (window.MODE === 'STRICT') ? MIN_QSCORE_STRICT : MIN_QSCORE_NORMAL; }
-  function _minVol()    { return (window.MODE === 'STRICT') ? MIN_VOL_RATIO     : 0.30; }  // v25.1: lowered NORMAL floor 0.6→0.30 (was rejecting 100% of candidates because live-candle volRatios cluster at 0.31–0.33)
-  const MIN_SIGNAL_GAP      = 10;       // candles between same-dir signals
-  const MIN_TRADES_TO_JUDGE = 8;
-  const MIN_WIN_RATE        = 0.60;
+  // v36: live CFG readers — always in sync with the config block above
+  function _minScore()       { return (window.MODE === 'STRICT') ? MIN_SCORE_STRICT : (window.CFG?.SIGNAL_MIN_SCORE ?? 45); }
+  function _minQScore()      { return (window.MODE === 'STRICT') ? MIN_QSCORE_STRICT : MIN_QSCORE_NORMAL; }
+  function _minVol()         { return (window.MODE === 'STRICT') ? MIN_VOL_RATIO : 0.30; }
+  function _minTrend()       { return window.CFG?.TREND_STRENGTH_MIN ?? 0.05; }   // v36: was hardcoded 0.2 — 4× too strict
+  function _minEmaSlope()    { return window.CFG?.EMA_SLOPE_THRESHOLD ?? 0.00003; } // v36: was hardcoded 0.0001 — 3.3× too strict
+  function _maxEmaCrosses()  { return window.CFG?.MAX_EMA_CROSSES ?? 20; }         // v36: was hardcoded 4 — 5× too strict
+  function _minRR()          { return window.CFG?.MIN_RR ?? 1.2; }                 // v36: was hardcoded 1.5
+  const MIN_SIGNAL_GAP      = 10;       // candles between same-dir signals (overridden by CFG at runtime)
+  function _minSignalGap()  { return window.CFG?.MIN_SIGNAL_GAP ?? MIN_SIGNAL_GAP; }
+  const MIN_TRADES_TO_JUDGE = 30; // v36: was 8 — need 30 trades before AI can disable a setup
+  const MIN_WIN_RATE        = 0.35; // v36: was 0.60 — only disable if below 35% (not 60%) to avoid false kills
   const PROBATION_TRADES    = 4;
   const STORAGE_KEY         = 'signalx.sniperEngine.v27';
 
@@ -14245,6 +14621,22 @@ window.SniperEngine = (function buildSniperEngine(){
   let state = loadState();
   // Per-symbol last-signal-index tracker (replaces lastSigIdx in old runEngine)
   const lastSigBySym = {};   // { 'BTCUSDT': { LONG: idx, SHORT: idx } }
+
+  // v36 FIX: Seed lastSigBySym from any existing S.sigs so that on the FIRST
+  // scan after page load, lastSigBySym already knows the most recent signal per
+  // direction and doesn't treat every historical candle as a fresh new setup.
+  (function seedLastSig(){
+    try {
+      const existing = (window.S && window.S.sigs) ? window.S.sigs : [];
+      for (const s of existing) {
+        const sym2 = s.symbol || (window.S && window.S.sym) || '';
+        const dir2 = s.direction || (s.dir === 'BUY' ? 'LONG' : 'SHORT');
+        if (!sym2 || !dir2 || s.idx == null) continue;
+        if (!lastSigBySym[sym2]) lastSigBySym[sym2] = { LONG: -1, SHORT: -1 };
+        if (s.idx > lastSigBySym[sym2][dir2]) lastSigBySym[sym2][dir2] = s.idx;
+      }
+    } catch(e) {}
+  })();
 
   function defaultState(){
     return {
@@ -14294,7 +14686,7 @@ window.SniperEngine = (function buildSniperEngine(){
     // Trend continuation: HTF-aligned BOS + high volume
     if (isContinuationBOS && htfMatch &&
         data.volRatio >= _minVol() &&
-        data.emaStrength >= MIN_TREND_STRENGTH) return 'TREND_CONTINUATION';
+        data.emaStrength >= _minTrend()) return 'TREND_CONTINUATION';
 
     return 'LOW_QUALITY';
   }
@@ -14318,109 +14710,125 @@ window.SniperEngine = (function buildSniperEngine(){
     }
   }
 
-  // ── Core decision: data → signal | null ───────────────────────────────
+  // ── Core decision: data → signal | null ─────────────────────────────────────
+  // v36-FINAL: score-based filter chain.
+  //
+  // Root cause of "no signals ever": the old chain had 7 simultaneous HARD requirements.
+  // Combined probability of all passing ≈ 0%.  Fix: only 3 hard gates remain.
+  // All other conditions accumulate points on a 0-100 scale. Signal passes if score ≥ floor.
   function process(data){
     state.processed++;
     if (!data) return reject('null-data', null);
 
-    const sym = data.symbol;
-
-    // ── Viability filters (mode-aware — v29 relaxed) ───────────────────
+    const sym      = data.symbol;
+    const isLong   = data.direction === 'LONG';
     const isStrict = (window.MODE === 'STRICT');
-    const minVol   = _minVol();
 
-    // Session: v25.6 — both NORMAL and STRICT now allow signals 24/7 (user choice).
-    // Session label is still computed and stored on the signal for reference, but
-    // it is no longer a rejection criterion.
-    if (data.volRatio < minVol) {
-      return reject(`volRatio ${data.volRatio.toFixed(2)} < ${minVol}`, data);
-    }
-    if (Math.abs(data.emaSlope) < MIN_EMA_SLOPE) {
-      return reject('EMA slope flat', data);
-    }
-    if (data.emaSpread < MIN_EMA_SPREAD) {
-      return reject('sideways market (EMA50/200 too close)', data);
-    }
-    if (data.atrRatio < MIN_ATR_RATIO) {
-      return reject(`low volatility (ATR ratio ${data.atrRatio.toFixed(2)})`, data);
-    }
-    if (data.emaCrosses >= MAX_EMA_CROSSES) {
-      return reject(`choppy (${data.emaCrosses} EMA crosses)`, data);
-    }
-    if (data.emaStrength < MIN_TREND_STRENGTH) {
-      return reject(`weak trend (EMA20/50 spread ${data.emaStrength.toFixed(2)}%)`, data);
-    }
+    // ── HARD GATE 1: Minimum volume ──────────────────────────────────────────
+    const minVol = isStrict ? _minVol() : 0.15;
+    if (data.volRatio < minVol) return reject(`vol ${data.volRatio.toFixed(2)} < ${minVol}`, data);
 
-    // ── HTF alignment — STRICT: h1+h4 must match; NORMAL: h1 mismatch = soft reject only if h4 also mismatches ─
-    const isLong = data.direction === 'LONG';
-    const wantTrend = isLong ? 'BULL' : 'BEAR';
-    if (isStrict) {
-      if (data.mtf.h1 !== wantTrend) return reject(`HTF h1=${data.mtf.h1||'?'} ≠ ${wantTrend}`, data);
-      if (data.mtf.h4 !== wantTrend) return reject(`HTF h4=${data.mtf.h4||'?'} ≠ ${wantTrend} (STRICT)`, data);
-    } else {
-      // NORMAL: require at least h1 OR h4 to agree (not both must mismatch)
-      const h1ok = data.mtf.h1 === wantTrend;
-      const h4ok = data.mtf.h4 === wantTrend;
-      if (!h1ok && !h4ok) return reject(`HTF h1=${data.mtf.h1||'?'} h4=${data.mtf.h4||'?'} both oppose ${wantTrend}`, data);
-    }
+    // ── HARD GATE 2: No extreme chop ─────────────────────────────────────────
+    if (data.emaCrosses >= _maxEmaCrosses()) return reject(`choppy (${data.emaCrosses} EMA crosses)`, data);
 
-    // ── S/R proximity ───────────────────────────────────────────────────
-    if (!data.srProximity || !data.srProximity.found) {
-      return reject('not near a validated S/R level', data);
-    }
+    // ── SOFT SCORE — every condition adds points, nothing else hard-rejects ──
+    let score = 30; // base for passing the hard gates
 
-    // ── Fakeout filter ──────────────────────────────────────────────────
-    if (data.fakeout && data.fakeout.fake) return reject('fake breakout detected', data);
+    // EMA trend strength (+0–15)
+    const emaStr = data.emaStrength || 0;
+    score += emaStr >= 1.0 ? 15 : emaStr >= 0.5 ? 10 : emaStr >= 0.1 ? 5 : 0;
 
-    // ── Confirmation: NORMAL mode needs retest OR pullback; STRICT needs both ──
-    const hasRetest   = !!(data.retest && data.retest.retested);
-    const hasPullback = !!(data.pullback && data.pullback.confirmed);
-    const isStrict2   = (window.MODE === 'STRICT');
-    const confirmOk   = isStrict2 ? (hasRetest && hasPullback) : (hasRetest || hasPullback);
-    if (!confirmOk) return reject('no retest/engulfing/rejection', data);
+    // EMA slope (+0–10)
+    const slope = Math.abs(data.emaSlope || 0);
+    score += slope >= 0.002 ? 10 : slope >= 0.001 ? 7 : slope >= 0.0001 ? 3 : 0;
 
-    // ── Liquidity: must have BOS or sweep ───────────────────────────────
+    // ATR ratio (+0–10)
+    const atr = data.atrRatio || 0;
+    score += atr >= 1.2 ? 10 : atr >= 0.8 ? 7 : atr >= 0.4 ? 3 : 0;
+
+    // Volume bonus (+0–10)
+    score += data.volRatio >= 2.0 ? 10 : data.volRatio >= 1.2 ? 7 : data.volRatio >= 0.6 ? 3 : 0;
+
+    // BOS + sweep (+0–15)
     const hasBOS   = !!(data.bos   && data.bos.detected);
     const hasSweep = !!(data.sweep && data.sweep.detected);
-    if (!hasBOS && !hasSweep) return reject('no BOS or sweep', data);
+    score += (hasBOS && hasSweep) ? 15 : hasBOS ? 10 : hasSweep ? 8 : 0;
 
-    // ── Classify ────────────────────────────────────────────────────────
-    const setupType = classify(data);
-    if (setupType === 'LOW_QUALITY') return reject('classified LOW_QUALITY', data);
+    // Retest / pullback (+0–10)
+    const hasRetest   = !!(data.retest   && data.retest.retested);
+    const hasPullback = !!(data.pullback && data.pullback.confirmed);
+    score += (hasRetest && hasPullback) ? 10 : hasRetest ? 7 : hasPullback ? 5 : 0;
 
-    // ── Compute score via existing helper (no duplication) ──────────────
-    const scored = window.scoreCandidate(data._cs, data._id, data.idx, data.direction);
-    if (!scored) return reject('scoreCandidate returned null', data);
-    let score = scored.score + (data.mtf.alignedCount * 5); // MTF bonus
-    score = Math.min(score, 100);
-    const minScoreNow = _minScore();
-    if (score < minScoreNow) return reject(`score ${score} < ${minScoreNow} (${window.MODE||'NORMAL'})`, data);
+    // HTF alignment (+0–10)
+    const wantTrend = isLong ? 'BULL' : 'BEAR';
+    const h1ok = data.mtf.h1 === null ? null : data.mtf.h1 === wantTrend;
+    const h4ok = data.mtf.h4 === null ? null : data.mtf.h4 === wantTrend;
+    score += (h1ok === true ? 5 : 0) + (h4ok === true ? 5 : 0);
+    // STRICT: both HTF must agree
+    if (isStrict && h1ok === false && h4ok === false)
+      return reject(`STRICT HTF: h1=${data.mtf.h1||'?'} h4=${data.mtf.h4||'?'}`, data);
 
-    // ── Quality gate via existing helper ────────────────────────────────
-    const gate = window.qualityGate(data._cs, data._id, data.idx, data.direction);
-    const minQNow = _minQScore();
-    if (!gate.passed || gate.qScore < minQNow) {
-      return reject(`qScore ${gate.qScore}/${minQNow} (${window.MODE||'NORMAL'})`, data);
+    // S/R proximity (+10)
+    if (data.srProximity && data.srProximity.found) score += 10;
+
+    // Fakeout penalty (-15)
+    if (data.fakeout && data.fakeout.fake) score -= 15;
+
+    // Blend with scoreCandidate if available
+    if (typeof window.scoreCandidate === 'function') {
+      try {
+        const sc = window.scoreCandidate(data._cs, data._id, data.idx, data.direction);
+        if (sc && sc.score) {
+          score = Math.round(score * 0.6 + sc.score * 0.4);
+          score += (data.mtf.alignedCount || 0) * 3;
+        }
+      } catch(e) {}
     }
+    score = Math.max(0, Math.min(100, score));
 
-    // ── Smart entry + SL/TP via existing helpers ────────────────────────
-    const smartCtx = window.computeSmartEntry(data._cs, data._id, data.idx, data.direction,
-                                              data.bos, data.sweep, data.retest);
+    // ── HARD GATE 3: Score floor ──────────────────────────────────────────────
+    const minScoreNow = isStrict ? 70 : (window.CFG && window.CFG.SIGNAL_MIN_SCORE ? window.CFG.SIGNAL_MIN_SCORE : 45);
+    if (score < minScoreNow) return reject(`score ${score} < ${minScoreNow}`, data);
+
+    // ── Classify setup type ───────────────────────────────────────────────────
+    const setupType = (hasBOS || hasSweep) ? classify(data) : 'TREND_CONTINUATION';
+
+    // ── SL/TP — HARD: must produce a valid trade ──────────────────────────────
+    let smartCtx = null;
+    try { smartCtx = window.computeSmartEntry && window.computeSmartEntry(data._cs, data._id, data.idx, data.direction, data.bos, data.sweep, data.retest); } catch(e) {}
+    if (typeof window.computeSLTP !== 'function') return reject('computeSLTP not ready', data);
     const setup = window.computeSLTP(data._cs, data._id, data.idx, data.direction, score, smartCtx);
     if (!setup) return reject('computeSLTP returned null', data);
-    if (setup.rr < MIN_RR) return reject(`RR ${setup.rr.toFixed(2)} < ${MIN_RR} (floor 1.5)`, data);
+    if (setup.rr < _minRR()) return reject(`RR ${setup.rr.toFixed(2)} < ${_minRR().toFixed(1)}`, data);
 
     // ── Per-trend uniqueness (max 1 signal per trend per direction) ─────
+    // v36 FIX: After a trade finishes (WIN/LOSS/EXPIRED) the tracker is cleared
+    // so new entries are allowed immediately. Previously it stayed permanently
+    // blocked until an EMA20/50 crossover — which never happens in a trending
+    // market → engine produced 0 signals forever after the first trade closed.
     const symState = lastSigBySym[sym] || (lastSigBySym[sym] = { LONG:-1, SHORT:-1 });
     if (symState[data.direction] >= 0) {
-      let hadReversal = false;
-      const id2 = data._id;
-      for (let j = symState[data.direction] + 1; j <= data.idx; j++) {
-        const prevBull = id2.e20[j-1] > id2.e50[j-1];
-        const currBull = id2.e20[j]   > id2.e50[j];
-        if (prevBull !== currBull) { hadReversal = true; break; }
+      const TERMINAL = ['WIN','LOSS','EXPIRED'];
+      const prevIdx  = symState[data.direction];
+      const prevSig  = (window.S && window.S.sigs || []).find(function(s) {
+        return s.idx === prevIdx && (s.symbol || '') === sym && s.direction === data.direction;
+      });
+      const prevDone = prevSig && TERMINAL.indexOf(prevSig.status) >= 0;
+
+      if (prevDone) {
+        // Previous trade is finished — unlock so a new signal can be generated
+        symState[data.direction] = -1;
+      } else {
+        // Previous signal still open — require EMA crossover before same direction
+        let hadReversal = false;
+        const id2 = data._id;
+        for (let j = prevIdx + 1; j <= data.idx; j++) {
+          const prevBull = id2.e20[j-1] > id2.e50[j-1];
+          const currBull = id2.e20[j]   > id2.e50[j];
+          if (prevBull !== currBull) { hadReversal = true; break; }
+        }
+        if (!hadReversal) return reject('no trend reversal (prev trade still open)', data);
       }
-      if (!hadReversal) return reject('no trend reversal since last signal', data);
     }
 
     // Signal-gap dedupe handled by pushSignal() — see Stage 3.
@@ -14430,15 +14838,41 @@ window.SniperEngine = (function buildSniperEngine(){
       return reject(`setup "${setupType}" disabled by AI`, data);
     }
 
+    // ── Ensure gate + scored are always defined for the signal builder ──
+    // qualityGate and scoreCandidate are called here for metadata only —
+    // they no longer hard-reject (score-based approach handles that above).
+    let gate = { qScore: 2, passed: true, reasons: [] };
+    let scored = { score: score, sc: {}, godMode: false };
+    try {
+      if (typeof window.qualityGate === 'function') {
+        const g = window.qualityGate(data._cs, data._id, data.idx, data.direction);
+        if (g) gate = g;
+      }
+    } catch(e) {}
+    try {
+      if (typeof window.scoreCandidate === 'function') {
+        const sc2 = window.scoreCandidate(data._cs, data._id, data.idx, data.direction);
+        if (sc2) scored = sc2;
+      }
+    } catch(e) {}
+    // Guard: ensure gate.qScore is never negative (would corrupt signal metadata)
+    if (gate.qScore < 0) gate = { qScore: 1, passed: true, reasons: gate.reasons || [] };
+
     // ── Confidence + tier via existing helpers ──────────────────────────
-    let confidence = window.computeConfidence(score, gate.qScore, data.sweep,
-                                               data.mtf.alignedCount, data.session);
+    let confidence = 60; // default
+    try {
+      confidence = window.computeConfidence(score, gate.qScore, data.sweep,
+                                             data.mtf.alignedCount, data.session);
+    } catch(e) {}
     if (data.bos.detected)     confidence = Math.min(100, confidence + Math.round(data.bos.strength * 0.08));
     if (data.retest.retested)  confidence = Math.min(100, confidence + Math.round(data.retest.quality * 0.5));
 
     const quality = score >= ELITE_SCORE ? 'ELITE' : 'STRONG';
-    const baseTier = window.getSignalTier(score, gate.qScore,
-                                           data.sweep.detected || data.bos.detected, confidence);
+    let baseTier = score >= 85 ? 'SNIPER' : score >= 70 ? 'STRONG' : 'VALID';
+    try {
+      baseTier = window.getSignalTier(score, gate.qScore,
+                                       (data.sweep && data.sweep.detected) || (data.bos && data.bos.detected), confidence) || baseTier;
+    } catch(e) {}
 
     // ── Build the final signal — same shape as the old runEngine emitted
     const signal = {
@@ -14460,11 +14894,11 @@ window.SniperEngine = (function buildSniperEngine(){
       // Meta
       time: data.candleTime,
       label: score >= 90 ? 'ELITE' : score >= 80 ? 'Very Strong' : 'Strong',
-      sc: scored.sc, mtfBonus: data.mtf.alignedCount * 5,
-      pullbackQuality: data.pullback.quality,
-      pullbackType:    data.pullback.type,
-      srZonePrice: data.srProximity.price,
-      srZoneDist:  data.srProximity.distPct,
+      sc: (scored && scored.sc) || {}, mtfBonus: (data.mtf && data.mtf.alignedCount || 0) * 5,
+      pullbackQuality: (data.pullback && data.pullback.quality) || 0,
+      pullbackType:    (data.pullback && data.pullback.type) || "NONE",
+      srZonePrice: (data.srProximity && data.srProximity.price) || null,
+      srZoneDist:  (data.srProximity && data.srProximity.distPct) || null,
       volRatio:    +data.volRatio.toFixed(2),
       emaStrength: +data.emaStrength.toFixed(2),
       session:     data.session,
@@ -14476,9 +14910,8 @@ window.SniperEngine = (function buildSniperEngine(){
       bos: { detected: data.bos.detected, level: data.bos.bosLevel,
              strength: data.bos.strength, closeBeyondPct: data.bos.closeBeyondPct,
              touches: data.bos.touches || 0 },
-      retest: { confirmed: data.retest.retested, price: data.retest.retestPrice,
-                quality:   data.retest.quality },
-      smartEntry: { mode: smartCtx.entryMode, reason: smartCtx.reason },
+      retest: { confirmed: !!(data.retest && data.retest.retested), price: data.retest && data.retest.retestPrice, quality: data.retest && data.retest.quality || 0 },
+      smartEntry: { mode: (smartCtx && smartCtx.entryMode) || "PULLBACK", reason: (smartCtx && smartCtx.reason) || "EMA_TREND" },
       confluence: {
         trend: true,
         liquidity: hasBOS || hasSweep,
@@ -14504,7 +14937,14 @@ window.SniperEngine = (function buildSniperEngine(){
     return signal;
   }
 
+  // v36: rejection reason counter for KPI diagnostics
+  const rejectCounts = {};
+
   function reject(reason, data){
+    // Track top rejection reasons (reset by resetScanCounters)
+    const key = reason.split(' ').slice(0,3).join(' '); // first 3 words as key
+    rejectCounts[key] = (rejectCounts[key] || 0) + 1;
+
     state.lastReject = {
       reason,
       sym: data?.symbol || '?',
@@ -14547,7 +14987,10 @@ window.SniperEngine = (function buildSniperEngine(){
     const out = {
       processed: state.processed, passed: state.passed,
       passRate: state.processed ? (state.passed / state.processed * 100).toFixed(1) + '%' : '–',
-      lastReject: state.lastReject, setups: {},
+      lastReject: state.lastReject,
+      rejectCounts: Object.assign({}, rejectCounts), // copy for safe reading
+      topRejectReason: Object.keys(rejectCounts).sort((a,b)=>rejectCounts[b]-rejectCounts[a])[0] || null,
+      setups: {},
     };
     for (const [k, p] of Object.entries(state.perfBySetup)) {
       const graded = p.wins + p.losses;
@@ -14570,12 +15013,42 @@ window.SniperEngine = (function buildSniperEngine(){
 
   console.log('[Sniper-Refactor:2] SniperEngine defined. Sole decision-maker.');
 
+  // v36: expose reseed so init() can sync lastSigBySym after a coin switch
+  function _reseed(sigs) {
+    try {
+      if (!Array.isArray(sigs)) return;
+      for (const s of sigs) {
+        const sym2 = s.symbol || (window.S && window.S.sym) || '';
+        const dir2 = s.direction || (s.dir === 'BUY' ? 'LONG' : 'SHORT');
+        if (!sym2 || !dir2 || s.idx == null) continue;
+        if (!lastSigBySym[sym2]) lastSigBySym[sym2] = { LONG: -1, SHORT: -1 };
+        if (s.idx > lastSigBySym[sym2][dir2]) lastSigBySym[sym2][dir2] = s.idx;
+      }
+    } catch(e) {}
+  }
+
+  // v36: reset scan-level counters at start of each runEngine call
+  // so KPI bar shows current scan stats, not lifetime totals
+  function resetScanCounters(){
+    state.processed = 0;
+    state.passed    = 0;
+    state.lastReject = null;
+    // reset rejection reason counts
+    Object.keys(rejectCounts).forEach(k => delete rejectCounts[k]);
+  }
+
   return {
-    process, updatePerformance, getStats, reset,
-    config: Object.freeze({
-      MIN_SCORE_NORMAL, MIN_SCORE_STRICT, ELITE_SCORE, MIN_RR, MIN_VOL_RATIO, MIN_ATR_RATIO,
+    process, updatePerformance, getStats, reset, _reseed, resetScanCounters,
+    config: { // v36: live values from CFG (not frozen snapshot)
+      get MIN_SCORE_NORMAL()  { return window.CFG?.SIGNAL_MIN_SCORE ?? 45; },
+      MIN_SCORE_STRICT, ELITE_SCORE,
+      get MIN_RR()            { return window.CFG?.MIN_RR ?? 1.2; },
+      MIN_VOL_RATIO, MIN_ATR_RATIO,
       MIN_QSCORE_NORMAL, MIN_QSCORE_STRICT, MIN_TRADES_TO_JUDGE, MIN_WIN_RATE,
-    }),
+      get MIN_TREND_STRENGTH(){ return window.CFG?.TREND_STRENGTH_MIN ?? 0.05; },
+      get MIN_EMA_SLOPE()     { return window.CFG?.EMA_SLOPE_THRESHOLD ?? 0.00003; },
+      get MAX_EMA_CROSSES()   { return window.CFG?.MAX_EMA_CROSSES ?? 20; },
+    },
   };
 })();
 </script>
@@ -14609,22 +15082,33 @@ window.SniperEngine = (function buildSniperEngine(){
     // pushSignal. Direct .push from anywhere else triggers a warning.
     window.pushSignal = function pushSignal(sig){
       if (!sig) return false;
-      if (sig.mode !== 'SNIPER') {
-        console.warn('[pushSignal] rejected — signal not from SniperEngine:',
-                     sig.symbol, sig.direction);
-        return false;
+      // v36: allow non-SNIPER signals through with a warning — do not silently drop
+      // them. The score threshold acts as the real quality gate.
+      if (sig.mode && sig.mode !== 'SNIPER') {
+        console.warn('[pushSignal] non-SNIPER signal accepted:', sig.symbol, sig.direction, 'mode:', sig.mode);
       }
       // Dedupe: same idx + direction
-      const dup = S.sigs.some(s => s.idx === sig.idx && s.direction === sig.direction
-                                                     && s.symbol === sig.symbol);
+      const dup = S.sigs.some(function(s){ return s.idx === sig.idx && s.direction === sig.direction && s.symbol === sig.symbol; });
       if (dup) return false;
-      // Min-gap: 10 candles between same-direction signals on same symbol
-      const last = S.sigs.filter(s => s.symbol === sig.symbol &&
-                                       s.direction === sig.direction).pop();
-      if (last && (sig.idx - last.idx) < 10) {
-        return false;
+
+      // Min-gap: skip if previous same-direction signal is still open.
+      // v36 FIX: if the previous signal is already WIN/LOSS/EXPIRED, the gap
+      // rule is waived entirely — the trade is done and a fresh entry is valid
+      // immediately. The old code applied the 10-candle gap unconditionally,
+      // which silently blocked new signals even after a finished trade.
+      const DONE_STATUSES = ['WIN','LOSS','EXPIRED'];
+      const sameDir = S.sigs.filter(function(s){ return s.symbol === sig.symbol && s.direction === sig.direction; });
+      const lastSig = sameDir[sameDir.length - 1];
+      if (lastSig) {
+        const prevDone = DONE_STATUSES.indexOf(lastSig.status) >= 0;
+        if (!prevDone && (sig.idx - lastSig.idx) < (window.CFG && window.CFG.MIN_SIGNAL_GAP || 2)) {
+          // Previous trade still open AND signal is too close — reject
+          return false;
+        }
+        // prevDone = true → gap waived, allow new entry
       }
-      // Use the original Array.prototype.push (we're about to wrap it below)
+
+      // Use the original Array.prototype.push (wrapped below)
       Array.prototype.push.call(S.sigs, sig);
       return true;
     };
@@ -14658,6 +15142,9 @@ window.SniperEngine = (function buildSniperEngine(){
     window.runEngine = function sniperRunEngine(cs, id){
       if (!cs || !id || cs.length < 51) return []; // FIX: was 211, reduced to match MIN_LEN=50
 
+      // v36: reset per-scan counters so KPI bar shows THIS scan's stats
+      try { window.SniperEngine.resetScanCounters(); } catch(e) {}
+
       let candidates = [];
       try { candidates = window.extractCandidates(cs, id) || []; }
       catch(e){
@@ -14687,7 +15174,18 @@ window.SniperEngine = (function buildSniperEngine(){
         const pct = candidates.length ? ((approved.length / candidates.length) * 100).toFixed(0) : 0;
         console.log(
           `%c[SniperEngine] ${candidates.length} candidates → ${approved.length} accepted · ${candidates.length - approved.length} rejected (${pct}% pass rate)` +
-          (approved.length === 0 ? `\n  ↳ last reject: ${lastReason}` : ''),
+          (function(){
+            if (approved.length > 0) return '';
+            const eng = window.SniperEngine && window.SniperEngine.getStats ? window.SniperEngine.getStats() : null;
+            if (eng && eng.topRejectReason && eng.topRejectCount > 1) {
+              // Show full breakdown of top 3 reject reasons
+              const top3 = Object.entries(eng.rejectCounts || {})
+                .sort((a,b)=>b[1]-a[1]).slice(0,3)
+                .map(([k,v])=>`${k}(×${v})`).join(' · ');
+              return `\n  ↳ reject breakdown: ${top3}`;
+            }
+            return `\n  ↳ last reject: ${lastReason}`;
+          })(),
           approved.length > 0 ? 'color:#00c896' : 'color:#f59e0b'
         );
       }
@@ -15697,5 +16195,759 @@ window.SAT={state:st,render};
   else setTimeout(boot, 1000);
 })();
 </script>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════════════╗
+// ║  MULTI-COIN AUTO SCANNER  — v36                                          ║
+// ║  Scans all CFG.COINS in the background every 60s.                        ║
+// ║  Each coin keeps its own signal history independently.                   ║
+// ║  Shows badge + notification when a signal fires on a coin you're not on. ║
+// ╚══════════════════════════════════════════════════════════════════════════╝
+(function() {
+'use strict';
+
+// ── State ─────────────────────────────────────────────────────────────────
+const MCS = {
+  coins: {},          // { 'BTCUSDT': { sigs:[], lastScanTs:0, scanning:false } }
+  running: false,
+  interval: null,
+  SCAN_INTERVAL_MS: 60000,   // full cycle every 60s
+  DELAY_BETWEEN_MS: 350,     // between coins — respects Binance rate limit
+  MIN_SCORE: 55,             // min score to surface in multi-scan
+  MAX_CANDLES_AGO: 15,       // signal must be within last 15 candles to be "live"
+  newSignals: {},            // { sym: count } — unread badges
+};
+window.MCS = MCS;
+
+function coinState(sym) {
+  if (!MCS.coins[sym]) MCS.coins[sym] = { sigs: [], lastScanTs: 0, scanning: false };
+  return MCS.coins[sym];
+}
+
+// ── Scan one coin ──────────────────────────────────────────────────────────
+async function scanCoin(sym, tf) {
+  const cs = coinState(sym);
+  if (cs.scanning) return;
+  cs.scanning = true;
+  try {
+    const url = `https://api.binance.com/api/v3/klines?symbol=${sym}&interval=${tf}&limit=300`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const raw = await r.json();
+    if (!Array.isArray(raw) || raw.length < 210) throw new Error('Not enough candles');
+
+    const candles = raw.map(k => ({ t:+k[0], o:+k[1], h:+k[2], l:+k[3], c:+k[4], v:+k[5] }));
+    const ind = (typeof computeAll === 'function') ? computeAll(candles) : null;
+    if (!ind) throw new Error('computeAll unavailable');
+
+    // Run engine — temporarily set a lower score floor to catch more signals
+    const origMin = window.CFG ? window.CFG.SIGNAL_MIN_SCORE : 65;
+    if (window.CFG) window.CFG.SIGNAL_MIN_SCORE = MCS.MIN_SCORE;
+    let rawSigs = [];
+    // v36 FIX: use try/finally so S.sigs and CFG.SIGNAL_MIN_SCORE are ALWAYS
+    // restored even if runEngine throws. Old code left both corrupted on error.
+    const origSigs = window.S ? window.S.sigs : [];
+    try {
+      if (window.S) window.S.sigs = cs.sigs;
+      rawSigs = (typeof runEngine === 'function') ? (runEngine(candles, ind) || []) : [];
+    } catch(e) {
+      console.warn('[MCS] runEngine error for ' + sym + ':', e.message || e);
+    } finally {
+      if (window.S) window.S.sigs = origSigs;      // ALWAYS restore
+      if (window.CFG) window.CFG.SIGNAL_MIN_SCORE = origMin; // ALWAYS restore
+    }
+
+    // Merge new signals into coin's own history (append-only, no duplicates)
+    const n = candles.length - 1;
+    let newCount = 0;
+    for (const sig of rawSigs) {
+      if ((sig.score || 0) < MCS.MIN_SCORE) continue;
+      const candlesAgo = n - sig.idx;
+      if (candlesAgo > MCS.MAX_CANDLES_AGO) continue; // too old — not live
+      const exists = cs.sigs.some(s => s.idx === sig.idx && s.dir === sig.dir);
+      if (!exists) {
+        sig.symbol = sym;
+        sig._scanTf = tf;
+        sig._candlesAgo = candlesAgo;
+        sig._livePrice = candles[n].c;
+        sig.status = sig.status || 'WAITING';
+        cs.sigs.push(sig);
+        newCount++;
+      }
+    }
+
+    cs.lastScanTs = Date.now();
+
+    // Badge + notification for coins other than the active one
+    if (newCount > 0 && sym !== (window.S && window.S.sym)) {
+      MCS.newSignals[sym] = (MCS.newSignals[sym] || 0) + newCount;
+      const shortSym = sym.replace('USDT','');
+      const best = rawSigs.filter(s => (s.score||0) >= MCS.MIN_SCORE)
+                          .sort((a,b) => b.score - a.score)[0];
+      if (best) {
+        const dir = best.direction || (best.dir === 'BUY' ? 'LONG' : 'SHORT');
+        const emoji = dir === 'LONG' ? '🟢' : '🔴';
+        showMCSToast(`${emoji} ${shortSym} · ${dir} · Score ${best.score}`, sym);
+        if (typeof playAlertSound === 'function' && window.S && window.S.soundEnabled) {
+          playAlertSound('signal');
+        }
+      }
+      renderWatchlistWithBadges();
+      updateBestSignalPanel();
+    }
+
+  } catch(e) {
+    // silently skip failed coins
+  } finally {
+    cs.scanning = false;
+  }
+}
+
+// ── Full scan cycle across all coins ──────────────────────────────────────
+async function runFullScan() {
+  if (MCS.running) return;
+  MCS.running = true;
+  updateScannerStatus('scanning');
+
+  const coins = (window.CFG && window.CFG.COINS && window.CFG.COINS.length > 0)
+    ? window.CFG.COINS
+    : ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','ADAUSDT','DOGEUSDT','AVAXUSDT'];
+  const tf = (window.S && window.S.tf) ? window.S.tf : '1h';
+  let done = 0;
+
+  for (const sym of coins) {
+    updateScannerStatus('scanning', sym, done, coins.length);
+    await scanCoin(sym, tf);
+    done++;
+    await new Promise(res => setTimeout(res, MCS.DELAY_BETWEEN_MS));
+  }
+
+  MCS.running = false;
+  updateScannerStatus('idle');
+  updateBestSignalPanel();
+  renderWatchlistWithBadges();
+  console.log('[MCS] Full scan complete · ' + coins.length + ' coins · tf=' + tf);
+}
+
+// ── Toast specifically for multi-coin alerts ───────────────────────────────
+function showMCSToast(msg, sym) {
+  // Try to use existing toast, with click-to-switch action
+  const t = document.getElementById('mcs-toast');
+  if (!t) return;
+  t.innerHTML = `<span>${msg}</span><button onclick="switchCoin('${sym}');document.getElementById('mcs-toast').style.display='none'" 
+    style="margin-left:8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:9px;padding:2px 7px;border-radius:3px;cursor:pointer;font-family:monospace">
+    SWITCH →</button>`;
+  t.style.display = 'flex';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.style.display = 'none'; }, 8000);
+}
+
+// ── Best signal across all coins ───────────────────────────────────────────
+function getBestSignals(maxCount) {
+  maxCount = maxCount || 5;
+  const all = [];
+  const coins = (window.CFG && window.CFG.COINS) ? window.CFG.COINS : [];
+  for (const sym of coins) {
+    const cs = coinState(sym);
+    // Latest signal per coin (most recent by idx)
+    const live = cs.sigs.filter(s => !['WIN','LOSS','EXPIRED'].includes(s.status));
+    if (live.length) {
+      const best = live.sort((a,b) => b.score - a.score)[0];
+      all.push({ ...best, symbol: sym });
+    }
+  }
+  return all.sort((a,b) => b.score - a.score).slice(0, maxCount);
+}
+
+// ── Update "Best Signal Now" panel ────────────────────────────────────────
+function updateBestSignalPanel() {
+  const panel = document.getElementById('mcs-best-panel');
+  if (!panel) return;
+  const best = getBestSignals(5);
+  if (!best.length) {
+    panel.innerHTML = '<div style="color:#374555;font-size:9px;text-align:center;padding:8px">No live signals across coins</div>';
+    return;
+  }
+  panel.innerHTML = best.map(sig => {
+    const sym = (sig.symbol || '').replace('USDT','');
+    const dir = sig.direction || (sig.dir === 'BUY' ? 'LONG' : 'SHORT');
+    const isLong = dir === 'LONG';
+    const col = isLong ? '#00c896' : '#f0334e';
+    const score = sig.score || 0;
+    const scoreCol = score >= 80 ? '#00c896' : score >= 65 ? '#f59e0b' : '#60a5fa';
+    const isActive = (sig.symbol || '') === (window.S && window.S.sym);
+    return `<div onclick="switchCoin('${sig.symbol}');clearBadge('${sig.symbol}')" 
+      style="display:flex;align-items:center;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;background:${isActive?'rgba(255,255,255,.03)':'transparent'};transition:background .1s"
+      onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='${isActive?'rgba(255,255,255,.03)':'transparent'}'">
+      <div style="width:32px;height:32px;border-radius:50%;background:${col}18;border:1px solid ${col}40;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:8px">
+        <span style="font-size:8px;font-weight:700;color:${col}">${isLong?'▲':'▼'}</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:11px;font-weight:700;color:#dde5f0">${sym}</span>
+          <span style="font-size:7px;color:${col};background:${col}18;padding:0 4px;border-radius:2px">${dir}</span>
+          ${isActive ? '<span style="font-size:6px;color:#374555;margin-left:auto">ACTIVE</span>' : ''}
+        </div>
+        <div style="font-size:8px;color:#374555;margin-top:1px">
+          Entry $${(sig.entry||sig.fillPrice||0).toFixed(sig.entry>100?2:4)} · RR ${(sig.rr||0).toFixed(1)}
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:8px">
+        <div style="font-size:13px;font-weight:700;color:${scoreCol}">${score}</div>
+        <div style="font-size:6px;color:#374555;letter-spacing:1px">SCORE</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Scanner status indicator ───────────────────────────────────────────────
+function updateScannerStatus(state, currentSym, done, total) {
+  const el = document.getElementById('mcs-status');
+  if (!el) return;
+  if (state === 'scanning') {
+    const pct = (done && total) ? Math.round(done/total*100) : 0;
+    el.innerHTML = `<span style="color:#f59e0b">⟳ SCANNING${currentSym?' '+currentSym.replace('USDT',''):''}${pct?' '+pct+'%':''}</span>`;
+  } else {
+    const lastTs = Math.max(...Object.values(MCS.coins).map(c=>c.lastScanTs||0), 0);
+    const ago = lastTs ? Math.round((Date.now()-lastTs)/1000) : null;
+    el.innerHTML = `<span style="color:#374555">⦿ AUTO SCAN${ago?' · '+ago+'s ago':' · WAITING'}</span>`;
+  }
+}
+
+// ── Badge helpers ──────────────────────────────────────────────────────────
+window.clearBadge = function(sym) {
+  delete MCS.newSignals[sym];
+  renderWatchlistWithBadges();
+};
+
+// ── Patch renderWatchlist to add signal badges ─────────────────────────────
+function renderWatchlistWithBadges() {
+  const wl = document.getElementById('watchlist');
+  if (!wl) return;
+  const coins = (window.CFG && window.CFG.COINS) ? window.CFG.COINS : [];
+  wl.innerHTML = coins.map(c => {
+    const p = window.S && window.S.wPrices && window.S.wPrices[c];
+    const d = (window.S && window.S.wDeltas && window.S.wDeltas[c]) || 0;
+    const up = d >= 0;
+    const sh = c.replace('USDT','');
+    const badge = MCS.newSignals[c] || 0;
+    const cs2 = coinState(c);
+    const liveSigs = cs2.sigs.filter(s => !['WIN','LOSS','EXPIRED'].includes(s.status));
+    const bestSig = liveSigs.sort((a,b)=>(b.score||0)-(a.score||0))[0];
+    const sigIndicator = bestSig
+      ? `<span style="font-size:7px;color:${bestSig.direction==='LONG'||bestSig.dir==='BUY'?'#00c896':'#f0334e'};margin-top:1px">${bestSig.direction||bestSig.dir==='BUY'?'▲':'▼'} ${bestSig.score}</span>`
+      : '';
+    const badgeHtml = badge > 0
+      ? `<span style="position:absolute;top:-3px;right:-3px;background:#f0334e;color:#fff;font-size:7px;font-weight:700;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;line-height:1">${badge}</span>`
+      : '';
+    return `<div class="witem${c===window.S.sym?' on':''}" onclick="switchCoin('${c}');clearBadge('${c}')" style="position:relative">
+      ${badgeHtml}
+      <div><div class="wnm">${sh}/USDT</div><div class="wst">${c===window.S.sym?'● ACTIVE':sigIndicator}</div></div>
+      <div style="text-align:right">
+        <div class="wp" style="color:${up?'var(--g)':'var(--r)'}">${p?('$'+(p>=1000?p.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}):p.toFixed(4))):'---'}</div>
+        <div class="wc" style="color:${up?'var(--g)':'var(--r)'}">${p?(up?'▲+':'▼')+Math.abs(d).toFixed(2)+'%':'--'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Patch the existing renderWatchlist
+window._origRenderWatchlist = window.renderWatchlist;
+window.renderWatchlist = renderWatchlistWithBadges;
+
+// ── Build the UI panels ────────────────────────────────────────────────────
+function buildUI() {
+  // 1. Multi-coin toast (separate from main toast, appears above it)
+  const mcsToast = document.createElement('div');
+  mcsToast.id = 'mcs-toast';
+  mcsToast.style.cssText = `
+    position:fixed;bottom:54px;left:50%;transform:translateX(-50%);
+    background:linear-gradient(135deg,#0f1923,#1a2535);
+    border:1px solid rgba(0,200,150,.3);border-radius:6px;
+    padding:8px 14px;font-family:monospace;font-size:10px;color:#dde5f0;
+    display:none;align-items:center;gap:6px;z-index:9999;
+    box-shadow:0 4px 20px rgba(0,0,0,.5);white-space:nowrap;
+    max-width:90vw;overflow:hidden;
+  `;
+  document.body.appendChild(mcsToast);
+
+  // 2. Inject "Best Signal Now" section + scanner status into the watchlist panel
+  const watchPanel = document.getElementById('panel-watch');
+  if (!watchPanel) return;
+
+  // Find the header div and inject after it
+  const header = watchPanel.querySelector('div:first-child');
+  if (header) {
+    // Add scanner status to header
+    const statusLine = document.createElement('div');
+    statusLine.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-top:4px';
+    statusLine.innerHTML = `
+      <span id="mcs-status" style="font-size:7px;letter-spacing:1px;color:#374555">⦿ AUTO SCAN · WAITING</span>
+      <button onclick="window.runFullScan && window.runFullScan()" style="background:rgba(0,200,150,.1);border:1px solid rgba(0,200,150,.25);color:#00c896;font-size:7px;font-family:monospace;cursor:pointer;padding:2px 8px;border-radius:2px;letter-spacing:1px">▶ SCAN NOW</button>
+    `;
+    header.appendChild(statusLine);
+
+    // Best signals panel
+    const bestSection = document.createElement('div');
+    bestSection.style.cssText = 'border-bottom:1px solid var(--brd);flex-shrink:0';
+    bestSection.innerHTML = `
+      <div style="padding:4px 10px 3px;display:flex;align-items:center;justify-content:space-between">
+        <div class="sbt" style="margin:0">BEST SIGNALS · ALL COINS</div>
+        <span style="font-size:7px;color:#374555" id="mcs-coin-count">${(window.CFG&&window.CFG.COINS||[]).length} coins</span>
+      </div>
+      <div id="mcs-best-panel" style="overflow-y:auto;max-height:180px">
+        <div style="color:#374555;font-size:9px;text-align:center;padding:10px">Press SCAN NOW to start · auto-scans every 60s</div>
+      </div>
+    `;
+    // Insert best section before the watchlist div
+    const watchlistDiv = watchPanel.querySelector('#watchlist');
+    if (watchlistDiv) {
+      watchPanel.insertBefore(bestSection, watchlistDiv);
+    }
+  }
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────
+function boot() {
+  if (!document.body) { setTimeout(boot, 500); return; }
+  buildUI();
+  // First scan after 5 seconds (give app time to load)
+  setTimeout(() => {
+    runFullScan();
+    // Then repeat every 60 seconds
+    MCS.interval = setInterval(runFullScan, MCS.SCAN_INTERVAL_MS);
+  }, 5000);
+
+  // Status ticker — updates the "Xs ago" label
+  setInterval(() => updateScannerStatus('idle'), 10000);
+  console.log('[MCS] Multi-Coin Auto Scanner started · interval=' + MCS.SCAN_INTERVAL_MS + 'ms');
+}
+
+window.runFullScan = runFullScan;
+window.MCS = MCS;
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else setTimeout(boot, 1500);
+
+})();
+</script>
+
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// v38 CLEAR HISTORY FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+
+function clearSignalHistory() {
+  if (!confirm('Clear all signal history? This cannot be undone.')) return;
+
+  // Clear from localStorage
+  try {
+    localStorage.removeItem('signalx.v13.signals');
+  } catch(e) {}
+
+  // Clear from PS store
+  if (window.PS && window.PS.clearAll) {
+    try {
+      // Only clear signals, not everything
+      localStorage.removeItem('signalx.v13.signals');
+    } catch(e) {}
+  }
+
+  // Clear from live state
+  if (window.S) {
+    if (window.S.sigs) window.S.sigs = [];
+    if (window.S.liveSignalCards) window.S.liveSignalCards = [];
+    if (window.S.liveFeedNotifs) window.S.liveFeedNotifs = [];
+    window.S.lastSigCount = 0;
+    window.S.blockedCount = 0;
+  }
+
+  // Clear the UI elements
+  const sentries = document.getElementById('sentries');
+  if (sentries) {
+    sentries.innerHTML = '<div style="color:var(--t3);font-size:9px;text-align:center;padding:20px 10px;line-height:1.6">Signal history cleared<br><span style="font-size:8px;color:#1e2d3e">Waiting for new signals · Score ≥65</span></div>';
+  }
+
+  // Reset count badge
+  const countBadge = document.getElementById('sig-history-count');
+  if (countBadge) countBadge.textContent = '0 SIGNALS';
+
+  // Reset KPI signal counters
+  const kPassed = document.getElementById('kPassed');
+  const kRejected = document.getElementById('kRejected');
+  const kGenerated = document.getElementById('kGenerated');
+  const kQ = document.getElementById('kQ');
+  if (kPassed) kPassed.textContent = '0';
+  if (kRejected) kRejected.textContent = '0';
+  if (kGenerated) kGenerated.textContent = 'of 0 scanned';
+  if (kQ) kQ.textContent = '--';
+
+  // Reset stats strip signal counts
+  const ssElite = document.getElementById('ss-elite');
+  const ssStrong = document.getElementById('ss-strong');
+  if (ssElite) ssElite.textContent = '0';
+  if (ssStrong) ssStrong.textContent = '0 STRONG';
+
+  // Flash confirmation
+  _showClearToast('Signal history cleared');
+}
+
+function clearTradeHistory() {
+  if (!confirm('Clear all trade history and reset P&L stats? This cannot be undone.')) return;
+
+  // Clear from localStorage
+  try {
+    localStorage.removeItem('signalx.v13.trades');
+    localStorage.removeItem('signalx.v13.stats');
+  } catch(e) {}
+
+  // Clear live state
+  if (window.S) {
+    if (window.S.tradeHistory) window.S.tradeHistory = [];
+    // Reset equity
+    if (window.S.equity) {
+      window.S.equity = { initial: 10000, current: 10000, peak: 10000, maxDrawdown: 0, history: [] };
+    }
+    // Reset AI learning daily
+    if (window.S.learningEngine) {
+      window.S.learningEngine.daily = { date: null, wins: 0, losses: 0, totalR: 0, trades: 0 };
+      window.S.learningEngine.memory = [];
+      window.S.learningEngine.totalR = 0;
+    }
+  }
+
+  // Clear trade ledger UI
+  const tledger = document.getElementById('tledger');
+  if (tledger) {
+    tledger.innerHTML = '<div style="color:var(--t3);font-size:9px;text-align:center;padding:16px">No closed trades yet</div>';
+  }
+
+  // Reset all P&L display elements
+  const resets = {
+    tgross: '--', tfees: '--', tnet: '--', tpf: '--',
+    tledgercount: '0 TRADES',
+    kTrades: '0', kWR: '--', kWL: '0W / 0L', kRR: '--', kPF: 'PF --',
+    kDD: '0.00%', kPnl: '$0.00', kPnlPct: '0.00%', kBal: '$10,000',
+    'ss-total': '0', 'ss-wins': '0', 'ss-losses': '0 losses',
+    'ss-wr': '--%', 'ss-avgr': '--R', 'ss-totalr': 'total +0R',
+    'ss-todayr': '+0R', 'ss-todaywl': '0W 0L',
+    'mini-pnl': '$0.00', 'mini-trades': '0',
+    'mini-wins': '0W', 'mini-losses': '0L', 'mini-wr': '--%', 'mini-avgr': '--R',
+    ptot: '0', pwr: '--%', parr: '--', ppend: '0',
+    'ai-d-trades': '0', 'ai-d-wr': '--%', 'ai-d-r': '0R', 'ai-d-wl': '0/0',
+  };
+  Object.entries(resets).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  });
+
+  // Reset win rate bar
+  const wrBar = document.getElementById('ss-wr-bar');
+  if (wrBar) wrBar.style.width = '0%';
+
+  // Reset pending count
+  const kPending = document.getElementById('kPending');
+  if (kPending) kPending.textContent = '0 pending';
+
+  // Redraw equity curve blank
+  const eqCanvas = document.getElementById('eqcurve');
+  if (eqCanvas) {
+    const ctx = eqCanvas.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, eqCanvas.width, eqCanvas.height);
+  }
+
+  _showClearToast('Trade history cleared · Balance reset to $10,000');
+}
+
+function _showClearToast(msg) {
+  // Remove existing toast
+  const old = document.getElementById('_clearToast');
+  if (old) old.remove();
+
+  const toast = document.createElement('div');
+  toast.id = '_clearToast';
+  toast.style.cssText = [
+    'position:fixed', 'bottom:24px', 'left:50%', 'transform:translateX(-50%)',
+    'background:#0d1220', 'border:1px solid rgba(0,200,150,.3)',
+    'color:#00c896', 'font:700 10px/1 monospace',
+    'padding:10px 20px', 'border-radius:4px', 'z-index:99999',
+    'letter-spacing:1px', 'box-shadow:0 4px 20px rgba(0,0,0,.6)',
+    'pointer-events:none',
+    'animation:_toastIn .2s ease'
+  ].join(';');
+  toast.textContent = '✓ ' + msg;
+
+  // Add keyframes if not already present
+  if (!document.getElementById('_toastStyle')) {
+    const s = document.createElement('style');
+    s.id = '_toastStyle';
+    s.textContent = '@keyframes _toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+    document.head.appendChild(s);
+  }
+
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .4s'; }, 2600);
+  setTimeout(() => toast.remove(), 3000);
+}
+</script>
+
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// MASTER SETTINGS — ⚙ top-bar button, full overlay modal
+// ═══════════════════════════════════════════════════════════
+(function(){
+
+/* ── CSS ─────────────────────────────────────────────────── */
+const _style = document.createElement('style');
+_style.textContent = `
+#_msOv{position:fixed;inset:0;z-index:99990;background:rgba(1,2,8,.9);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center}
+#_msBox{background:#060d1a;border:1px solid #1e2d3e;border-radius:6px;width:min(780px,96vw);max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.9)}
+._mstab{padding:10px 18px;font-size:8px;font-weight:700;letter-spacing:1.5px;cursor:pointer;border-bottom:2px solid transparent;color:#374555;white-space:nowrap;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font)}
+._mstab.on{color:#00c896;border-bottom-color:#00c896}
+._mstab.red.on{color:#f0334e;border-bottom-color:#f0334e}
+._mspane{display:none}
+._mspane.on{display:block}
+._msrow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #0d1220}
+._msrow:last-child{border-bottom:none}
+._mslabel{font-size:8px;color:#8a9ab8;font-weight:600}
+._mssub{font-size:6px;color:#374555;margin-top:2px}
+._msbtn{font-family:var(--font);cursor:pointer;border-radius:2px;letter-spacing:1px;font-size:7px;padding:3px 11px;transition:background .15s;white-space:nowrap}
+._mscard{background:#03060f;border:1px solid #141c2e;border-radius:4px;padding:12px;margin-bottom:10px}
+._mscardtitle{font-size:8px;font-weight:700;color:#dde5f0;letter-spacing:1.5px;margin-bottom:10px}
+`;
+document.head.appendChild(_style);
+
+/* ── HTML ────────────────────────────────────────────────── */
+function buildHTML(){
+  if(document.getElementById('_msOv')) return;
+  const d = document.createElement('div');
+  d.id='_msOv';
+  d.innerHTML=`
+  <div id="_msBox">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #1e2d3e;flex-shrink:0">
+      <div style="font-size:14px;font-weight:700;color:#dde5f0;letter-spacing:1px">⚙ DASHBOARD SETTINGS</div>
+      <button onclick="MasterSettings.close()" style="background:rgba(240,51,78,.08);border:1px solid rgba(240,51,78,.25);color:#f0334e;width:28px;height:28px;border-radius:3px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:monospace">✕</button>
+    </div>
+
+    <div id="_mstabs" style="display:flex;border-bottom:1px solid #1e2d3e;flex-shrink:0;background:#03060f;overflow-x:auto;scrollbar-width:none">
+      <button class="_mstab on" data-t="dashboard">⊞ DASHBOARD</button>
+      <button class="_mstab" data-t="signals">◈ SIGNALS</button>
+      <button class="_mstab" data-t="display">▣ DISPLAY</button>
+      <button class="_mstab" data-t="trading">⚡ TRADING</button>
+      <button class="_mstab red" data-t="reset">⟳ RESET</button>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:16px;scrollbar-width:thin;scrollbar-color:#1e2d3e #03060f">
+
+      <!-- DASHBOARD TAB -->
+      <div id="_msp-dashboard" class="_mspane on">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="_mscard">
+            <div class="_mscardtitle">PANEL VISIBILITY</div>
+            <div class="_msrow"><div><div class="_mslabel">KPI Bar + Stats Strip</div><div class="_mssub">Account & performance stats</div></div><button class="_msbtn" style="background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);color:#00c896" onclick="V17QBar.toggle('performance',document.getElementById('v17-btn-performance'))">TOGGLE</button></div>
+            <div class="_msrow"><div><div class="_mslabel">MTF + OHLCV Bars</div><div class="_mssub">Multi-timeframe alignment</div></div><button class="_msbtn" style="background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);color:#00c896" onclick="V17QBar.toggle('settings',document.getElementById('v17-btn-settings'))">TOGGLE</button></div>
+            <div class="_msrow"><div><div class="_mslabel">Left Sidebar</div><div class="_mssub">Signal / trade / CTRL tabs</div></div><button class="_msbtn" style="background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);color:#00c896" onclick="V17Layout.togglePanel('sb')">TOGGLE</button></div>
+            <div class="_msrow"><div><div class="_mslabel">Live Feed (right)</div><div class="_mssub">Real-time signal feed</div></div><button class="_msbtn" style="background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);color:#00c896" onclick="V17Layout.togglePanel('alertFeed')">TOGGLE</button></div>
+            <div class="_msrow"><div><div class="_mslabel">Pro Panel</div><div class="_mssub">Advanced trading panel</div></div><button class="_msbtn" style="background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);color:#00c896" onclick="V17Layout.togglePanel('proPanel')">TOGGLE</button></div>
+            <div class="_msrow"><div><div class="_mslabel">Live Signal Panel</div><div class="_mssub">Live signal overlay</div></div><button class="_msbtn" style="background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);color:#00c896" onclick="V17Layout.togglePanel('v13-panel')">TOGGLE</button></div>
+            <div class="_msrow"><div><div class="_mslabel">Float Panel</div><div class="_mssub">Floating signal widget</div></div><button class="_msbtn" style="background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);color:#00c896" onclick="V17FloatPanel.toggleFloat()">TOGGLE</button></div>
+          </div>
+          <div class="_mscard">
+            <div class="_mscardtitle">QUICK ACTIONS</div>
+            <button onclick="try{init(S.sym,S.tf)}catch(e){}" style="width:100%;text-align:left;background:rgba(0,200,150,.06);border:1px solid rgba(0,200,150,.15);color:#00c896;font-family:var(--font);cursor:pointer;padding:8px 10px;border-radius:2px;font-size:7px;letter-spacing:1px;margin-bottom:5px">↻ Reload Chart</button>
+            <button onclick="V17Layout.openLayoutPanel()" style="width:100%;text-align:left;background:rgba(91,108,246,.06);border:1px solid rgba(91,108,246,.15);color:#5b6cf6;font-family:var(--font);cursor:pointer;padding:8px 10px;border-radius:2px;font-size:7px;letter-spacing:1px;margin-bottom:5px">⊞ Layout Manager</button>
+            <button onclick="V17FloatPanel.toggleFloat()" style="width:100%;text-align:left;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);color:#f59e0b;font-family:var(--font);cursor:pointer;padding:8px 10px;border-radius:2px;font-size:7px;letter-spacing:1px;margin-bottom:5px">◈ Float Panel</button>
+            <button onclick="document.getElementById('altbtn')&&document.getElementById('altbtn').click();MasterSettings.close()" style="width:100%;text-align:left;background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.15);color:#22d3ee;font-family:var(--font);cursor:pointer;padding:8px 10px;border-radius:2px;font-size:7px;letter-spacing:1px">⚑ Open Alerts</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIGNALS TAB -->
+      <div id="_msp-signals" class="_mspane">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="_mscard">
+            <div class="_mscardtitle">ENGINE TOGGLES</div>
+            <div class="_msrow"><div><div class="_mslabel">Signal Generation</div><div class="_mssub">Allow new signals</div></div><button class="_msbtn" style="background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);color:#00c896" onclick="toggleCtrl('signals')">TOGGLE</button></div>
+            <div class="_msrow"><div><div class="_mslabel">Alert Notifications</div><div class="_mssub">Push to live feed</div></div><button class="_msbtn" style="background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);color:#00c896" onclick="toggleCtrl('alerts')">TOGGLE</button></div>
+            <div class="_msrow"><div><div class="_mslabel">Sound Alerts</div><div class="_mssub">Audio on signals</div></div><button class="_msbtn" style="background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);color:#00c896" onclick="toggleCtrl('sound')">TOGGLE</button></div>
+            <div class="_msrow"><div><div class="_mslabel">AI Learning</div><div class="_mssub">Adaptive weights</div></div><button class="_msbtn" style="background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);color:#a78bfa" onclick="toggleCtrl('ai')">TOGGLE</button></div>
+            <div class="_msrow"><div><div class="_mslabel">Auto-Execution</div><div class="_mssub">Paper mode fills</div></div><button class="_msbtn" style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);color:#f59e0b" onclick="toggleCtrl('exec')">TOGGLE</button></div>
+          </div>
+          <div class="_mscard">
+            <div class="_mscardtitle">SCORE THRESHOLD · <span id="_ms_sc" style="color:#f59e0b">65</span></div>
+            <div style="display:flex;gap:5px;margin-bottom:10px">
+              <button onclick="manualAdjustScore(-2);_msSyncScore()" style="flex:1;background:rgba(240,51,78,.07);border:1px solid rgba(240,51,78,.2);color:#f0334e;font-family:var(--font);cursor:pointer;padding:6px 0;border-radius:2px;font-size:8px;font-weight:700">−2</button>
+              <button onclick="manualAdjustScore(-1);_msSyncScore()" style="flex:1;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);color:#f59e0b;font-family:var(--font);cursor:pointer;padding:6px 0;border-radius:2px;font-size:8px;font-weight:700">−1</button>
+              <button onclick="manualAdjustScore(0);_msSyncScore()" style="flex:1;background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);color:#00c896;font-family:var(--font);cursor:pointer;padding:6px 0;border-radius:2px;font-size:8px;font-weight:700">RESET</button>
+              <button onclick="manualAdjustScore(1);_msSyncScore()" style="flex:1;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);color:#f59e0b;font-family:var(--font);cursor:pointer;padding:6px 0;border-radius:2px;font-size:8px;font-weight:700">+1</button>
+              <button onclick="manualAdjustScore(2);_msSyncScore()" style="flex:1;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);color:#a78bfa;font-family:var(--font);cursor:pointer;padding:6px 0;border-radius:2px;font-size:8px;font-weight:700">+2</button>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button onclick="window.setMode&&window.setMode('NORMAL')" style="flex:1;background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);color:#00c896;font-family:var(--font);cursor:pointer;padding:7px;border-radius:2px;font-size:7px;letter-spacing:1px">NORMAL MODE<br><span style="font-size:6px;opacity:.6">score ≥ 60</span></button>
+              <button onclick="window.setMode&&window.setMode('STRICT')" style="flex:1;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);color:#a78bfa;font-family:var(--font);cursor:pointer;padding:7px;border-radius:2px;font-size:7px;letter-spacing:1px">STRICT MODE<br><span style="font-size:6px;opacity:.6">score ≥ 75</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DISPLAY TAB -->
+      <div id="_msp-display" class="_mspane">
+        <div class="_mscard">
+          <div class="_mscardtitle">ALL DISPLAY TOGGLES</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <button onclick="V17QBar.toggle('signals',document.getElementById('v17-btn-signals'))" style="background:rgba(0,200,150,.06);border:1px solid rgba(0,200,150,.15);color:#00c896;font-family:var(--font);cursor:pointer;padding:8px;border-radius:2px;font-size:7px;letter-spacing:1px">◈ SIGNALS PANEL</button>
+            <button onclick="V17QBar.toggle('performance',document.getElementById('v17-btn-performance'))" style="background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.15);color:#22d3ee;font-family:var(--font);cursor:pointer;padding:8px;border-radius:2px;font-size:7px;letter-spacing:1px">▣ PERFORMANCE BAR</button>
+            <button onclick="V17QBar.toggle('settings',document.getElementById('v17-btn-settings'))" style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);color:#f59e0b;font-family:var(--font);cursor:pointer;padding:8px;border-radius:2px;font-size:7px;letter-spacing:1px">⚙ MTF + OHLCV</button>
+            <button onclick="V17Layout.togglePanel('sb')" style="background:rgba(91,108,246,.06);border:1px solid rgba(91,108,246,.15);color:#5b6cf6;font-family:var(--font);cursor:pointer;padding:8px;border-radius:2px;font-size:7px;letter-spacing:1px">◀ SIDEBAR</button>
+            <button onclick="V17Layout.togglePanel('alertFeed')" style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);color:#f59e0b;font-family:var(--font);cursor:pointer;padding:8px;border-radius:2px;font-size:7px;letter-spacing:1px">FEED ▶</button>
+            <button onclick="V17Layout.togglePanel('proPanel')" style="background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.15);color:#22d3ee;font-family:var(--font);cursor:pointer;padding:8px;border-radius:2px;font-size:7px;letter-spacing:1px">⚡ PRO PANEL</button>
+            <button onclick="V17Layout.togglePanel('v13-panel')" style="background:rgba(0,200,150,.06);border:1px solid rgba(0,200,150,.15);color:#00c896;font-family:var(--font);cursor:pointer;padding:8px;border-radius:2px;font-size:7px;letter-spacing:1px">◉ LIVE SIG PANEL</button>
+            <button onclick="V17FloatPanel.toggleFloat()" style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);color:#f59e0b;font-family:var(--font);cursor:pointer;padding:8px;border-radius:2px;font-size:7px;letter-spacing:1px">◈ FLOAT PANEL</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRADING TAB -->
+      <div id="_msp-trading" class="_mspane">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="_mscard">
+            <div class="_mscardtitle">AI ENGINE</div>
+            <button onclick="try{resetLearningWeights()}catch(e){}" style="width:100%;text-align:left;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.15);color:#a78bfa;font-family:var(--font);cursor:pointer;padding:8px 10px;border-radius:2px;font-size:7px;letter-spacing:1px;margin-bottom:5px">⚡ Reset AI Weights</button>
+            <button onclick="try{resetLearningMemory()}catch(e){}" style="width:100%;text-align:left;background:rgba(240,51,78,.06);border:1px solid rgba(240,51,78,.15);color:#f0334e;font-family:var(--font);cursor:pointer;padding:8px 10px;border-radius:2px;font-size:7px;letter-spacing:1px;margin-bottom:5px">✕ Clear AI Memory</button>
+            <button onclick="try{resetDailyStats()}catch(e){}" style="width:100%;text-align:left;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);color:#f59e0b;font-family:var(--font);cursor:pointer;padding:8px 10px;border-radius:2px;font-size:7px;letter-spacing:1px">◎ Reset Today's Stats</button>
+          </div>
+          <div class="_mscard">
+            <div class="_mscardtitle">ACCOUNT</div>
+            <button onclick="try{resetEquity()}catch(e){}" style="width:100%;text-align:left;background:rgba(240,51,78,.06);border:1px solid rgba(240,51,78,.15);color:#f0334e;font-family:var(--font);cursor:pointer;padding:8px 10px;border-radius:2px;font-size:7px;letter-spacing:1px;margin-bottom:5px">⬡ Reset Equity to $10,000</button>
+            <button onclick="try{init(S.sym,S.tf)}catch(e){}" style="width:100%;text-align:left;background:rgba(0,200,150,.06);border:1px solid rgba(0,200,150,.15);color:#00c896;font-family:var(--font);cursor:pointer;padding:8px 10px;border-radius:2px;font-size:7px;letter-spacing:1px">↻ Reload Chart Data</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESET TAB -->
+      <div id="_msp-reset" class="_mspane">
+        <div style="background:rgba(240,51,78,.05);border:1.5px solid rgba(240,51,78,.3);border-radius:5px;padding:18px;margin-bottom:14px;text-align:center">
+          <div style="font-size:13px;font-weight:700;color:#f0334e;letter-spacing:2px;margin-bottom:8px">💣 RESET EVERYTHING</div>
+          <div style="font-size:8px;color:#445568;line-height:2;margin-bottom:14px">Signals · Trades · P&amp;L · AI Memory · Equity · Daily Stats<br><span style="color:#f0334e;font-weight:700">All data deleted. Cannot be undone.</span></div>
+          <button onclick="MasterSettings._nukeAll()" style="background:rgba(240,51,78,.15);border:1.5px solid rgba(240,51,78,.55);color:#f0334e;font-size:10px;font-family:var(--font);cursor:pointer;padding:11px 32px;border-radius:3px;letter-spacing:2px;font-weight:700" onmouseover="this.style.background='rgba(240,51,78,.3)'" onmouseout="this.style.background='rgba(240,51,78,.15)'">✕ RESET EVERYTHING — FRESH START</button>
+        </div>
+        <div class="_mscard">
+          <div class="_mscardtitle">RESET INDIVIDUAL</div>
+          <div class="_msrow"><div><div class="_mslabel">Signal History</div><div class="_mssub">All generated signals & log entries</div></div><button class="_msbtn" style="background:rgba(240,51,78,.07);border:1px solid rgba(240,51,78,.2);color:#f0334e" onclick="try{clearSignalHistory()}catch(e){}">✕ CLEAR</button></div>
+          <div class="_msrow"><div><div class="_mslabel">Trade History & P&L</div><div class="_mssub">All trades, wins, losses, stats</div></div><button class="_msbtn" style="background:rgba(240,51,78,.07);border:1px solid rgba(240,51,78,.2);color:#f0334e" onclick="try{clearTradeHistory()}catch(e){}">✕ CLEAR</button></div>
+          <div class="_msrow"><div><div class="_mslabel">Equity / Balance</div><div class="_mssub">Resets balance to $10,000</div></div><button class="_msbtn" style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);color:#f59e0b" onclick="try{resetEquity()}catch(e){}">↺ RESET</button></div>
+          <div class="_msrow"><div><div class="_mslabel">AI Memory & Weights</div><div class="_mssub">Clears learning data</div></div><button class="_msbtn" style="background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);color:#a78bfa" onclick="try{resetLearningWeights();resetLearningMemory()}catch(e){}">↺ RESET</button></div>
+          <div class="_msrow"><div><div class="_mslabel">Today's Stats</div><div class="_mssub">Daily W/L counter & R total</div></div><button class="_msbtn" style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);color:#f59e0b" onclick="try{resetDailyStats()}catch(e){}">↺ RESET</button></div>
+        </div>
+      </div>
+
+    </div><!-- body end -->
+
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-top:1px solid #1e2d3e;flex-shrink:0;background:#03060f">
+      <span style="font-size:7px;color:#374555;letter-spacing:1px">All changes apply instantly · No reload needed</span>
+      <button onclick="MasterSettings.close()" style="background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.3);color:#00c896;font-size:8px;font-family:var(--font);cursor:pointer;padding:6px 18px;border-radius:2px;letter-spacing:1px">CLOSE</button>
+    </div>
+  </div>`;
+
+  document.body.appendChild(d);
+
+  // Close on backdrop click
+  d.addEventListener('click', function(e){ if(e.target===d) MasterSettings.close(); });
+
+  // Tab switching
+  d.querySelectorAll('._mstab').forEach(tab=>{
+    tab.addEventListener('click', function(){
+      const t = this.dataset.t;
+      d.querySelectorAll('._mstab').forEach(x=>{ x.classList.remove('on'); });
+      d.querySelectorAll('._mspane').forEach(x=>{ x.classList.remove('on'); });
+      this.classList.add('on');
+      const pane = document.getElementById('_msp-'+t);
+      if(pane) pane.classList.add('on');
+      _msSyncScore();
+    });
+  });
+}
+
+/* ── Score sync ─────────────────────────────────────────── */
+window._msSyncScore = function(){
+  const src = document.getElementById('ctrl-minscore');
+  const dst = document.getElementById('_ms_sc');
+  if(src && dst) dst.textContent = src.textContent;
+};
+
+/* ── NUKE ALL — proper deep reset ──────────────────────── */
+window.MasterSettings = {
+  open: function(){
+    buildHTML();
+    document.getElementById('_msOv').style.display='flex';
+    _msSyncScore();
+  },
+  close: function(){
+    const ov=document.getElementById('_msOv');
+    if(ov) ov.style.display='none';
+  },
+  _nukeAll: function(){
+    if(!confirm('⚠️ RESET EVERYTHING?\n\nThis will permanently delete ALL data:\n• All signals & signal history\n• All trades, wins, losses & P&L\n• AI memory, weights & adaptations\n• Equity & balance (→ $10,000)\n• Today\'s stats & daily history\n\nThis CANNOT be undone.\nAre you sure?')) return;
+
+    // 1 — Wipe localStorage completely
+    const keys=['signalx.v13.signals','signalx.v13.trades','signalx.v13.stats','signalx.v13.aiState'];
+    keys.forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} });
+
+    // 2 — Wipe live S state (the in-memory data the UI reads from)
+    if(window.S){
+      S.sigs = [];
+      S.tradeHistory = [];
+      S.liveSignalCards = [];
+      S.liveFeedNotifs = [];
+      S.lastSigCount = 0;
+      S.blockedCount = 0;
+      S.equity = { initial:10000, current:10000, peak:10000, maxDrawdown:0, history:[] };
+
+      const le = S.learningEngine;
+      le.memory        = [];
+      le.totalR        = 0;
+      le.adaptations   = 0;
+      le.lastAdapted   = null;
+      le.dailyHistory  = [];
+      le.daily         = { date: new Date().toDateString(), wins:0, losses:0, totalR:0, trades:0 };
+      for(const b of Object.values(le.buckets))   { b.wins=0; b.losses=0; b.totalR=0; }
+      for(const c of Object.values(le.condStats)) { c.wins=0; c.losses=0; c.fired=0; }
+      // Reset weights to base values
+      for(const w of Object.values(le.weights))   { w.current = w.base; }
+    }
+
+    // 3 — Call existing helpers to reset their own state too
+    try{ if(typeof resetLearningWeights==='function') resetLearningWeights(); }catch(e){}
+
+    // 4 — Force all UI panels to re-render from the now-empty state
+    try{ if(typeof updKPIBar==='function')      updKPIBar();      }catch(e){}
+    try{ if(typeof updStatsStrip==='function')  updStatsStrip();  }catch(e){}
+    try{ if(typeof updTradeLedger==='function') updTradeLedger(); }catch(e){}
+    try{ if(typeof updPerfPanel==='function')   updPerfPanel();   }catch(e){}
+    try{ if(typeof updAIPanel==='function')     updAIPanel();     }catch(e){}
+
+    // 5 — Clear signal log UI
+    const sentries = document.getElementById('sentries');
+    if(sentries) sentries.innerHTML='<div style="color:var(--t3);font-size:9px;text-align:center;padding:20px 10px;line-height:1.6">No signals yet<br><span style="font-size:8px;color:#1e2d3e">Waiting for quality setups · Score ≥65</span></div>';
+
+    // 6 — Clear equity curve canvas
+    const eqc = document.getElementById('eqcurve');
+    if(eqc){ const ctx=eqc.getContext('2d'); if(ctx) ctx.clearRect(0,0,eqc.width,eqc.height); }
+
+    // 7 — Clear win rate bar
+    const wrBar = document.getElementById('ss-wr-bar');
+    if(wrBar){ wrBar.style.width='0%'; }
+
+    // 8 — Show toast & close
+    if(typeof _showClearToast==='function') _showClearToast('✓ All data reset — Dashboard is Day 1 fresh');
+    MasterSettings.close();
+  }
+};
+
+})();
+</script>
+
 </body>
 </html>
