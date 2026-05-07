@@ -139,25 +139,38 @@ console.log('%c[SignalX] Debug toggle: SX_DEBUG.on() / SX_DEBUG.off() / SX_DEBUG
   // or from the URL hash for first-time setup. Never hardcoded in source.
   // Format: #fb=BASE64_JSON  (one-time bootstrap — hash is cleared after read)
   function _loadFBConfig() {
-    // ── HARDCODED CONFIG — auto-connects on every load ──────
-    return {
-      apiKey:      "AIzaSyC2j7TIGrph_q4yngCMSESmT7xPIOjBXgo",
-      databaseURL: "https://ai-signal-apx-default-rtdb.firebaseio.com",
-      projectId:   "ai-signal-apx",
-    };
+    try {
+      // 1. Check sessionStorage (set by user via CTRL panel Firebase form)
+      const stored = sessionStorage.getItem('signalx.fb.cfg');
+      if (stored) return JSON.parse(stored);
+    } catch(e) {}
+    try {
+      // 2. One-time URL hash bootstrap
+      if (window.location.hash.startsWith('#fb=')) {
+        const raw = decodeURIComponent(window.location.hash.slice(4));
+        const cfg = JSON.parse(atob(raw));
+        sessionStorage.setItem('signalx.fb.cfg', JSON.stringify(cfg));
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        return cfg;
+      }
+    } catch(e) {}
+    return null; // No credentials → Firebase stays offline
   }
   const FB_CONFIG = _loadFBConfig();
 
   let fbReady = false;
   let db = null;
 
-  if (typeof firebase !== 'undefined' && FB_CONFIG) {
+  if (typeof firebase !== 'undefined' && FB_CONFIG && window.location.protocol !== 'file:') {
     try {
       firebase.initializeApp(FB_CONFIG);
       db = firebase.database();
       fbReady = true;
-      console.info('[SignalX] Firebase connected → ' + FB_CONFIG.databaseURL);
-    } catch(e) { db = null; fbReady = false; console.warn('[SignalX] Firebase init failed:', e); }
+    } catch(e) { db = null; fbReady = false; }
+  }
+  // file:// protocol — Firebase disabled (CORS not allowed from local files)
+  if (window.location.protocol === 'file:') {
+    console.info('[SignalX] Running from local file — Firebase sync disabled. App works fully offline.');
   }
 
   window.FB = {
