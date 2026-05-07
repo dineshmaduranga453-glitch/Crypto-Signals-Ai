@@ -1852,7 +1852,7 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
   <span id="sfThreshEl" title="AI Smart Filter — auto-adjusts minimum score based on win rate">MIN: 65</span>
   <span id="fbStatus" title="Firebase Cloud Sync" style="font-size:7px;letter-spacing:1px;padding:2px 8px;border-radius:2px;border:1px solid rgba(55,69,85,.5);color:var(--t3);background:transparent;cursor:default;white-space:nowrap">☁ SYNC: OFF</span>
   <div class="sep"></div>
-  <button id="layoutBtn" onclick="DashLayout.openPanel()" style="padding:2px 9px;background:rgba(91,108,246,.1);border:1px solid rgba(91,108,246,.3);color:var(--in);cursor:pointer;border-radius:2px;font-size:9px;font-family:var(--font);transition:all .1s;letter-spacing:1px" title="Dashboard Layout Controls">⊞ LAYOUT</button>
+  <button id="layoutBtn" onclick="if(window.V17Layout){V17Layout.openLayoutPanel();}else{console.warn('V17Layout not ready');}" style="padding:2px 9px;background:rgba(91,108,246,.1);border:1px solid rgba(91,108,246,.3);color:var(--in);cursor:pointer;border-radius:2px;font-size:9px;font-family:var(--font);transition:all .1s;letter-spacing:1px" title="Dashboard Layout Controls">⊞ LAYOUT</button>
   <button onclick="MasterSettings.open()" style="padding:2px 11px;background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.35);color:#00c896;cursor:pointer;border-radius:2px;font-size:9px;font-family:var(--font);letter-spacing:1px;font-weight:700" title="Master Settings">⚙ SETTINGS</button>
   <!-- ── MODE SELECTOR v23.1 — two-button picker, calls window.setMode() ── -->
   <div id="modeSelectorWrap" style="display:flex;align-items:center;gap:0;border:1px solid var(--brd2);border-radius:3px;overflow:hidden;flex-shrink:0" title="Signal filtering mode">
@@ -10195,6 +10195,10 @@ window.stopRealTimeActivation  = stopRealTimeActivation;
  * key: 'signals' | 'alerts' | 'sound' | 'exec' | 'ai'
  */
 function toggleCtrl(key, el) {
+  // el is optional — Settings buttons call toggleCtrl('key') with no element.
+  // Fall back to the primary toggle for this key to read current state.
+  if (!el) el = document.getElementById('tgl-' + key) || document.querySelector('[id^="tgl-' + key + '"]');
+  if (!el) return; // safety: no toggle element found at all
   const wasOn = el.classList.contains('on');
   const nowOn = !wasOn;
   // Sync all toggle elements with same key
@@ -16964,3 +16968,4 @@ window.MasterSettings = {
 
 </body>
 </html>
+
