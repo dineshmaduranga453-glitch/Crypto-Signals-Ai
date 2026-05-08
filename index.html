@@ -2254,15 +2254,10 @@ button,.cbtn,.tbtn,.sta,.toggle,.witem,.scanrow{ touch-action:manipulation; -web
         <div class="chip"><span style="font-size:7px;color:var(--t3)">EMA BIAS</span><span id="emab" style="font-size:9px;font-weight:700;color:var(--t3)">--</span></div>
         <div class="chip" style="margin-top:3px"><span style="font-size:7px;color:var(--t3)">VOLATILITY</span><span id="volst" style="font-size:9px;font-weight:700;color:var(--t3)">--</span></div>
       </div>
-      <div style="flex:1;overflow-y:auto;padding:7px 8px;min-height:0">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <div class="sbt" style="margin:0">SIGNAL HISTORY</div>
-          <div style="display:flex;align-items:center;gap:5px">
-            <span id="sig-history-count" style="font-size:6px;color:var(--t3);background:#03060f;border:1px solid #141c2e;padding:1px 6px;border-radius:2px;letter-spacing:1px">0 SIGNALS</span>
-            <button onclick="clearSignalHistory()" title="Clear all signal history" style="background:rgba(240,51,78,.07);border:1px solid rgba(240,51,78,.2);color:#f0334e;font-size:7px;font-family:var(--font);cursor:pointer;padding:2px 7px;border-radius:2px;letter-spacing:1px;transition:all .15s" onmouseover="this.style.background='rgba(240,51,78,.15)'" onmouseout="this.style.background='rgba(240,51,78,.07)'">✕ CLEAR</button>
-          </div>
-        </div>
-        <div id="sentries"><div style="color:var(--t3);font-size:9px;text-align:center;padding:20px 10px;line-height:1.6">No signals yet<br><span style="font-size:8px;color:#1e2d3e">Waiting for quality setups · Score ≥65</span></div></div>
+      <!-- Signal History hidden — signals shown in center dashboard card instead -->
+      <div style="display:none" aria-hidden="true">
+        <span id="sig-history-count">0 SIGNALS</span>
+        <div id="sentries"></div>
       </div>
     </div>
 
@@ -12156,6 +12151,171 @@ console.log('[SignalX v9] PRO system initialized ✓ — Firebase + Sound + AI +
   #v13-panel { width: 280px; }
   #v13-stats-hero { grid-template-columns:repeat(3, 1fr); }
 }
+
+/* ── v13 active-card inside panel ── */
+#v13-active-card .v13-sig {
+  background:var(--c0);
+}
+
+/* ════════════════════════════════════════════════════════════
+   CENTER DASHBOARD ACTIVE SIGNAL CARD
+   ════════════════════════════════════════════════════════════ */
+#sx-center-signal {
+  position: fixed;
+  /* Centered horizontally, sitting in the lower-center of the chart area */
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9995;
+  pointer-events: auto;
+  min-width: 340px;
+  max-width: 440px;
+  width: clamp(300px, 36vw, 440px);
+  font-family: var(--font);
+}
+
+.sx-cs-card {
+  border-radius: 6px;
+  padding: 18px 20px 14px;
+  position: relative;
+  overflow: hidden;
+  animation: sx-cs-in .5s cubic-bezier(.18,.89,.32,1.28);
+}
+.sx-cs-card.buy {
+  background: linear-gradient(135deg, rgba(0,30,20,.97) 0%, rgba(3,6,15,.97) 100%);
+  border: 2px solid rgba(0,200,150,.6);
+  box-shadow: 0 0 40px rgba(0,200,150,.35), 0 0 80px rgba(0,200,150,.12),
+              inset 0 0 0 1px rgba(0,200,150,.2);
+  animation: sx-cs-in .5s cubic-bezier(.18,.89,.32,1.28),
+             sx-cs-glow-buy 2s ease-in-out infinite 0.6s;
+}
+.sx-cs-card.sell {
+  background: linear-gradient(135deg, rgba(30,0,5,.97) 0%, rgba(3,6,15,.97) 100%);
+  border: 2px solid rgba(240,51,78,.6);
+  box-shadow: 0 0 40px rgba(240,51,78,.35), 0 0 80px rgba(240,51,78,.12),
+              inset 0 0 0 1px rgba(240,51,78,.2);
+  animation: sx-cs-in .5s cubic-bezier(.18,.89,.32,1.28),
+             sx-cs-glow-sell 2s ease-in-out infinite 0.6s;
+}
+
+@keyframes sx-cs-in {
+  from { transform: scale(.88); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+@keyframes sx-cs-glow-buy {
+  0%,100% { box-shadow: 0 0 40px rgba(0,200,150,.35), 0 0 80px rgba(0,200,150,.12), inset 0 0 0 1px rgba(0,200,150,.2); }
+  50%     { box-shadow: 0 0 60px rgba(0,200,150,.55), 0 0 120px rgba(0,200,150,.2), inset 0 0 0 1px rgba(0,200,150,.35); }
+}
+@keyframes sx-cs-glow-sell {
+  0%,100% { box-shadow: 0 0 40px rgba(240,51,78,.35), 0 0 80px rgba(240,51,78,.12), inset 0 0 0 1px rgba(240,51,78,.2); }
+  50%     { box-shadow: 0 0 60px rgba(240,51,78,.55), 0 0 120px rgba(240,51,78,.2), inset 0 0 0 1px rgba(240,51,78,.35); }
+}
+
+/* Shine sweep */
+.sx-cs-card::before {
+  content: '';
+  position: absolute; top: 0; left: -80%;
+  width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent);
+  animation: sx-cs-shine 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes sx-cs-shine {
+  0%   { left: -80%; }
+  50%  { left: 150%; }
+  100% { left: 150%; }
+}
+
+/* Dismiss button */
+.sx-cs-dismiss {
+  position: absolute; top: 8px; right: 10px;
+  background: transparent; border: none; color: rgba(255,255,255,.25);
+  font-size: 14px; cursor: pointer; font-family: var(--font); padding: 2px 5px;
+  border-radius: 2px; transition: color .15s;
+  line-height: 1;
+}
+.sx-cs-dismiss:hover { color: rgba(255,255,255,.7); }
+
+/* Header row */
+.sx-cs-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.sx-cs-badge {
+  font-size: 9px; font-weight: 700; letter-spacing: 2px; padding: 3px 10px;
+  border-radius: 2px;
+}
+.sx-cs-badge.buy  { background: rgba(0,200,150,.2); color: var(--g); border: 1px solid rgba(0,200,150,.45); }
+.sx-cs-badge.sell { background: rgba(240,51,78,.2);  color: var(--r); border: 1px solid rgba(240,51,78,.45); }
+
+.sx-cs-sym {
+  font-size: 22px; font-weight: 700; letter-spacing: -.5px; color: #e8edf8;
+}
+.sx-cs-tier {
+  margin-left: auto; font-size: 7px; font-weight: 700; letter-spacing: 1.5px;
+  padding: 2px 8px; border-radius: 2px;
+}
+.sx-cs-tier.sniper { background: rgba(255,215,0,.18); color: #ffd700; border: 1px solid rgba(255,215,0,.45); }
+.sx-cs-tier.elite  { background: rgba(245,158,11,.18); color: var(--am); border: 1px solid rgba(245,158,11,.45); }
+.sx-cs-tier.normal { background: rgba(0,200,150,.1);   color: var(--g);  border: 1px solid rgba(0,200,150,.3); }
+
+/* Price grid */
+.sx-cs-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin-bottom: 12px;
+}
+.sx-cs-cell {
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+  border-radius: 3px; padding: 8px 10px; text-align: center;
+}
+.sx-cs-lbl {
+  font-size: 6px; color: rgba(255,255,255,.35); letter-spacing: 2px;
+  font-weight: 700; display: block; margin-bottom: 4px;
+}
+.sx-cs-val {
+  font-size: 13px; font-weight: 700; letter-spacing: -.3px;
+  font-variant-numeric: tabular-nums;
+}
+.sx-cs-val.entry { color: #e8edf8; }
+.sx-cs-val.sl    { color: var(--r); }
+.sx-cs-val.tp    { color: var(--g); }
+
+/* Score + RR row */
+.sx-cs-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.sx-cs-score-bar-wrap {
+  flex: 1; height: 5px; background: rgba(255,255,255,.06);
+  border-radius: 3px; overflow: hidden; min-width: 60px;
+}
+.sx-cs-score-bar {
+  height: 5px; border-radius: 3px; transition: width .6s ease;
+}
+.sx-cs-rr {
+  font-size: 11px; font-weight: 700; color: var(--pu); letter-spacing: -.3px;
+  white-space: nowrap;
+}
+.sx-cs-score-lbl {
+  font-size: 9px; font-weight: 700; white-space: nowrap;
+}
+.sx-cs-pulse-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  animation: sx-cs-dot 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.sx-cs-pulse-dot.buy  { background: var(--g); }
+.sx-cs-pulse-dot.sell { background: var(--r); }
+@keyframes sx-cs-dot {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%     { opacity: .3; transform: scale(.6); }
+}
+
+/* Footer info */
+.sx-cs-foot {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  font-size: 7px; color: rgba(255,255,255,.3); letter-spacing: 1px;
+}
 </style>
 
 <div id="v13-panel">
@@ -12170,11 +12330,15 @@ console.log('[SignalX v9] PRO system initialized ✓ — Firebase + Sound + AI +
     <div class="cell"><span class="lbl">LOSSES</span><span class="val r" id="v13-ss-losses">0</span></div>
     <div class="cell"><span class="lbl">WIN %</span><span class="val a" id="v13-ss-wr">--</span></div>
   </div>
-  <div id="v13-panel-body">
-    <div class="v13-empty">
-      <span class="ic">⚡</span>
-      NO SIGNALS YET<br>
-      <span style="font-size:7px;opacity:.6">Waiting for elite setup</span>
+  <!-- Active signal quick-view (replaces signal list) -->
+  <div id="v13-active-wrap" style="padding:10px 10px 6px;flex:1;display:flex;flex-direction:column;gap:6px;overflow:hidden">
+    <div style="font-size:6px;color:var(--t3);letter-spacing:2px;font-weight:700;margin-bottom:2px">ACTIVE SIGNAL</div>
+    <div id="v13-active-card">
+      <div class="v13-empty" style="padding:18px 10px">
+        <span class="ic">⚡</span>
+        NO ACTIVE SIGNAL<br>
+        <span style="font-size:7px;opacity:.6">Scanning for setups…</span>
+      </div>
     </div>
   </div>
   <div id="v13-panel-foot">
@@ -12182,6 +12346,12 @@ console.log('[SignalX v9] PRO system initialized ✓ — Firebase + Sound + AI +
     <button id="v13-btn-clear">✕ CLEAR</button>
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     CENTER DASHBOARD ACTIVE SIGNAL CARD
+     Overlays the chart center when a signal is live.
+     ═══════════════════════════════════════════════════════════ -->
+<div id="sx-center-signal" style="display:none"></div>
 
 <div id="v13-modal">
   <div id="v13-modal-box">
@@ -12274,57 +12444,135 @@ console.log('[SignalX v9] PRO system initialized ✓ — Firebase + Sound + AI +
   }
 
   function renderLivePanel() {
-    const body = document.getElementById('v13-panel-body');
+    // ── update the side panel "active signal" card ──────────────────────
+    const activeCard = document.getElementById('v13-active-card');
     const count = document.getElementById('v13-panel-count');
-    if (!body || !window.S || !window.S.sigs) return;
+    if (!window.S || !window.S.sigs) return;
 
-    const sigs = (window.S.sigs || []).slice().reverse().slice(0, 8); // last 8 newest first
+    const sigs = (window.S.sigs || []).slice().reverse().slice(0, 8);
     const active = sigs.filter(s => ['WAITING','TOUCHED','ACTIVE','BE_MOVED','PARTIAL_TP'].includes(s.status)).length;
-    count.textContent = `${active} active · ${sigs.length} recent`;
+    if (count) count.textContent = `${active} active · ${sigs.length} recent`;
 
-    if (sigs.length === 0) {
-      body.innerHTML = `<div class="v13-empty"><span class="ic">⚡</span>NO SIGNALS YET<br><span style="font-size:7px;opacity:.6">Waiting for elite setup</span></div>`;
+    // Find the most recent active/waiting signal
+    const hotSig = sigs.find(s => ['ACTIVE','TOUCHED','WAITING','BE_MOVED','PARTIAL_TP'].includes(s.status)) || sigs[0];
+
+    if (!hotSig) {
+      if (activeCard) activeCard.innerHTML = `<div class="v13-empty" style="padding:18px 10px"><span class="ic">⚡</span>NO ACTIVE SIGNAL<br><span style="font-size:7px;opacity:.6">Scanning for setups…</span></div>`;
       return;
     }
 
-    body.innerHTML = sigs.map(s => {
-      const dir = (s.dir || (s.direction === 'LONG' ? 'BUY' : 'SELL')).toLowerCase();
-      const stat = statusOf(s);
-      const isElite = (s.tier === 'ELITE') || s.score >= 90;
-      const cardCls = `v13-sig ${dir}${isElite ? ' elite' : ''} ${stat === 'win' || stat === 'loss' || stat === 'active' ? stat : ''}`;
-      const sym = (s.symbol || '').replace('USDT', '');
-      const rVal = s.effectiveRR !== undefined ? s.effectiveRR : (s.rr || 0);
-      const rDisp = stat === 'win' || stat === 'loss' ? (rVal >= 0 ? '+' : '') + rVal.toFixed(2) + 'R' : '';
+    const dir = (hotSig.dir || (hotSig.direction === 'LONG' ? 'BUY' : 'SELL')).toLowerCase();
+    const stat = statusOf(hotSig);
+    const isElite = (hotSig.tier === 'ELITE') || hotSig.score >= 90;
+    const cardCls = `v13-sig ${dir}${isElite ? ' elite' : ''} ${stat === 'win' || stat === 'loss' || stat === 'active' ? stat : ''}`;
+    const sym = (hotSig.symbol || '').replace('USDT', '');
+    const rVal = hotSig.effectiveRR !== undefined ? hotSig.effectiveRR : (hotSig.rr || 0);
+    const rDisp = stat === 'win' || stat === 'loss' ? (rVal >= 0 ? '+' : '') + rVal.toFixed(2) + 'R' : '';
+    const _sc = hotSig.score || 0;
+    const _scColor = (typeof getScoreColor === 'function') ? getScoreColor(_sc) : (_sc >= 90 ? 'lime' : _sc >= 80 ? 'orange' : 'red');
+    const tags = [
+      `<span class="tag${isElite ? ' gold' : ''}">${hotSig.tier || 'NORMAL'}</span>`,
+      (typeof hotSig.confidence === 'number') ? `<span class="tag" style="color:${hotSig.confidence >= 85 ? '#ff3b6b' : hotSig.confidence >= 70 ? 'var(--g)' : 'var(--am)'};font-weight:700">${hotSig.confidence}%</span>` : '',
+      (hotSig.sweep && hotSig.sweep.detected) ? `<span class="tag" style="color:#ff3b6b;border-color:rgba(255,59,107,.3)">⚡SWEEP</span>` : '',
+      hotSig.session ? `<span class="tag">${hotSig.session}</span>` : '',
+      `<span class="tag" style="color:${_scColor};border-color:${_scColor};font-weight:700">SCORE ${_sc}%</span>`,
+    ].filter(Boolean).join('');
 
-      const _sc = s.score || 0;
-      const _scColor = (typeof getScoreColor === 'function') ? getScoreColor(_sc) : (_sc >= 90 ? 'lime' : _sc >= 80 ? 'orange' : 'red');
-      const tags = [
-        `<span class="tag${isElite ? ' gold' : ''}">${s.tier || 'NORMAL'}</span>`,
-        (typeof s.confidence === 'number') ? `<span class="tag" style="color:${s.confidence >= 85 ? '#ff3b6b' : s.confidence >= 70 ? 'var(--g)' : 'var(--am)'};font-weight:700">${s.confidence}%</span>` : '',
-        (s.sweep && s.sweep.detected) ? `<span class="tag" style="color:#ff3b6b;border-color:rgba(255,59,107,.3)">⚡SWEEP</span>` : '',
-        s.session ? `<span class="tag">${s.session}</span>` : '',
-        `<span class="tag" style="color:${_scColor};border-color:${_scColor};font-weight:700">SCORE ${_sc}%</span>`,
-      ].filter(Boolean).join('');
-
-      return `
+    if (activeCard) {
+      activeCard.innerHTML = `
         <div class="${cardCls}">
           <div class="row1">
             <div style="display:flex;align-items:center;gap:6px">
               <span class="sym">${sym}</span>
               <span class="dir ${dir}">${dir.toUpperCase()}</span>
             </div>
-            <span class="status ${stat}">${statusLabel(s)}${rDisp ? ' · ' + rDisp : ''}</span>
+            <span class="status ${stat}">${statusLabel(hotSig)}${rDisp ? ' · ' + rDisp : ''}</span>
           </div>
           <div class="row2">
-            <div class="kv"><span class="k">ENTRY</span><span class="v">${fp(s.entry)}</span></div>
-            <div class="kv"><span class="k">SL</span><span class="v r">${fp(s.sl)}</span></div>
-            <div class="kv"><span class="k">TP</span><span class="v g">${fp(s.tp)}</span></div>
+            <div class="kv"><span class="k">ENTRY</span><span class="v">${fp(hotSig.entry)}</span></div>
+            <div class="kv"><span class="k">SL</span><span class="v r">${fp(hotSig.sl)}</span></div>
+            <div class="kv"><span class="k">TP</span><span class="v g">${fp(hotSig.tp)}</span></div>
           </div>
-          <div class="row3">${tags}<span class="tag" style="margin-left:auto">${fmtTime(s.time)}</span></div>
-        </div>
-      `;
-    }).join('');
+          <div class="row3">${tags}<span class="tag" style="margin-left:auto">${fmtTime(hotSig.time)}</span></div>
+        </div>`;
+    }
   }
+
+  // ─── CENTER DASHBOARD SIGNAL CARD ─────────────────────────────────────────
+  window._sxCenterLastIdx = null; // track which signal is shown
+
+  function showCenterSignal(sig) {
+    const wrap = document.getElementById('sx-center-signal');
+    if (!wrap || !sig) return;
+    const isLong = sig.direction === 'LONG' || sig.dir === 'BUY';
+    const dir = isLong ? 'buy' : 'sell';
+    const sym = (sig.symbol || '').replace('USDT', '');
+    const score = sig.score || 0;
+    const rr = sig.rr || 0;
+    const tier = (sig.tier || 'NORMAL').toUpperCase();
+    const tierCls = tier === 'SNIPER' ? 'sniper' : (score >= 85 || tier === 'ELITE') ? 'elite' : 'normal';
+    const scColor = score >= 90 ? '#00c896' : score >= 80 ? '#22d3ee' : score >= 70 ? '#f59e0b' : '#f0334e';
+    const barW = Math.min(100, score);
+    const barColor = score >= 80 ? '#00c896' : score >= 70 ? '#f59e0b' : '#f0334e';
+    const fp_ = v => { const n=Number(v); if(!isFinite(n)) return '--'; return n.toFixed(n>=100?2:n>=1?4:6); };
+
+    wrap.style.display = 'block';
+    wrap.innerHTML = `
+      <div class="sx-cs-card ${dir}">
+        <button class="sx-cs-dismiss" onclick="document.getElementById('sx-center-signal').style.display='none'" title="Dismiss">✕</button>
+        <div class="sx-cs-head">
+          <div class="sx-cs-pulse-dot ${dir}"></div>
+          <span class="sx-cs-badge ${dir}">▲ ${dir.toUpperCase()}</span>
+          <span class="sx-cs-sym">${sym}</span>
+          <span class="sx-cs-tier ${tierCls}">${tier}</span>
+        </div>
+        <div class="sx-cs-grid">
+          <div class="sx-cs-cell">
+            <span class="sx-cs-lbl">ENTRY</span>
+            <span class="sx-cs-val entry">${fp_(sig.entry)}</span>
+          </div>
+          <div class="sx-cs-cell">
+            <span class="sx-cs-lbl">STOP LOSS</span>
+            <span class="sx-cs-val sl">${fp_(sig.sl)}</span>
+          </div>
+          <div class="sx-cs-cell">
+            <span class="sx-cs-lbl">TAKE PROFIT</span>
+            <span class="sx-cs-val tp">${fp_(sig.tp)}</span>
+          </div>
+        </div>
+        <div class="sx-cs-meta">
+          <div class="sx-cs-pulse-dot ${dir}" style="width:6px;height:6px"></div>
+          <span class="sx-cs-score-lbl" style="color:${scColor}">SCORE ${score}</span>
+          <div class="sx-cs-score-bar-wrap">
+            <div class="sx-cs-score-bar" style="width:${barW}%;background:${barColor}"></div>
+          </div>
+          <span class="sx-cs-rr">R/R ${rr.toFixed ? rr.toFixed(2) : rr}</span>
+        </div>
+        <div class="sx-cs-foot">
+          <span>${(sig.session || '')} ${sig.tf || ''}</span>
+          <span>${fmtTime(sig.time)}</span>
+        </div>
+      </div>`;
+
+    // Auto-hide after 25 seconds
+    clearTimeout(wrap._autohide);
+    wrap._autohide = setTimeout(() => {
+      if (wrap.style.display !== 'none') {
+        wrap.style.opacity = '0';
+        wrap.style.transition = 'opacity .6s';
+        setTimeout(() => { wrap.style.display='none'; wrap.style.opacity=''; wrap.style.transition=''; }, 600);
+      }
+    }, 25000);
+  }
+
+  // Hook into triggerSignalAlert to show center card
+  const _origTrigger = window.triggerSignalAlert;
+  window.triggerSignalAlert = function(sig) {
+    if (typeof _origTrigger === 'function') _origTrigger(sig);
+    try { showCenterSignal(sig); } catch(e) {}
+  };
+  // Also expose for direct calls
+  window.showCenterSignal = showCenterSignal;
 
   // ─── 4. STATS STRIP (top of panel) ─────────────────────────────────────────
   function updateStatsStrip() {
